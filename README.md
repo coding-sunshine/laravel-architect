@@ -14,6 +14,7 @@ Define your application structure in YAML. Use natural language (with Prism) to 
 - **Idempotent builds** – Run `architect:build` repeatedly without duplicates
 - **Change detection** – Only regenerate what changed
 - **Convention-based** – Generates code that follows Laravel and your project conventions (Actions, thin controllers, Inertia)
+- **Stack-aware** – Detects Inertia React, Inertia Vue, Livewire, Volt, or Blade and generates the right pages and controllers
 
 ## Requirements
 
@@ -111,11 +112,32 @@ php artisan architect:status
 | `architect:plan` | Show what would be generated (dry run) |
 | `architect:build` | Generate code from draft (idempotent) |
 | `architect:status` | Show current state and generated files |
-| `architect:import` | Reverse-engineer codebase to YAML (planned) |
+| `architect:packages` | List detected packages and Architect-known hints |
+| `architect:explain` | Output draft summary (models, actions, pages) |
+| `architect:watch` | Watch draft and run build on change |
+| `architect:fix` | Suggest or apply fix when validation fails |
+| `architect:starter` | Load a starter draft (blog, saas, api) |
+| `architect:why` | Show which generator produced a file |
+| `architect:check` | Run validate + plan checklist |
+| `architect:import` | Reverse-engineer codebase to draft YAML |
 
-## Schema Reference
+## Documentation
 
-For a full description of `draft.yaml` (models, columns, actions, pages, routes), see [docs/SCHEMA.md](docs/SCHEMA.md).
+Full documentation lives in the [docs/](docs/) directory. Start with the [Documentation index](docs/README.md).
+
+| Document | Description |
+|----------|-------------|
+| [Getting Started](docs/getting-started.md) | Install, first draft, validate, plan, build, status. |
+| [Concepts](docs/concepts.md) | Draft as source of truth, idempotent builds, state, ownership, generators. |
+| [Schema Reference](docs/SCHEMA.md) | Full draft.yaml schema (models, columns, actions, pages, routes). |
+| [Commands](docs/commands.md) | Reference for all architect:* commands. |
+| [Configuration](docs/configuration.md) | All config keys and options. |
+| [Stacks](docs/stacks.md) | Supported stacks, detection, and override. |
+| [Packages](docs/packages.md) | Detected packages, registry, and how to extend. |
+| [AI and Prism](docs/ai-and-prism.md) | AI drafting, Prism setup, context minimisation. |
+| [Visual Designer](docs/visual-designer.md) | Open the Studio, frontend stack, command–UI parity. |
+| [Templates](docs/templates.md) | Starter drafts (blog, saas, api) and custom starters. |
+| [Troubleshooting](docs/troubleshooting.md) | Common errors and fixes. |
 
 ## Configuration
 

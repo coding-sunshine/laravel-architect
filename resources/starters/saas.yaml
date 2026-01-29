@@ -1,0 +1,29 @@
+schema_version: "1.0"
+
+models:
+  Team:
+    name: string:255
+    slug: string:255 unique
+    relationships:
+      hasMany: Project
+  Project:
+    name: string:255
+    team_id: id:Team foreign
+    relationships:
+      belongsTo: Team
+
+actions:
+  CreateTeam:
+    model: Team
+    return: Team
+  UpdateTeam:
+    model: Team
+    params: [Team, attributes]
+    return: void
+  CreateProject:
+    model: Project
+    return: Project
+
+pages:
+  Team: {}
+  Project: {}

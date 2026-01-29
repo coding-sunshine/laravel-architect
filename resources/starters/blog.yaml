@@ -1,0 +1,42 @@
+schema_version: "1.0"
+
+models:
+  Post:
+    title: string:400
+    slug: string:255 unique
+    body: longtext
+    published_at: timestamp nullable
+    author_id: id:User foreign
+    relationships:
+      belongsTo: User:author
+      hasMany: Comment
+    seeder:
+      category: development
+      count: 10
+  Comment:
+    body: text
+    post_id: id:Post foreign
+    author_id: id:User foreign
+    relationships:
+      belongsTo: Post
+      belongsTo: User:author
+
+actions:
+  CreatePost:
+    model: Post
+    return: Post
+  UpdatePost:
+    model: Post
+    params: [Post, attributes]
+    return: void
+  DeletePost:
+    model: Post
+    params: [Post]
+    return: void
+  CreateComment:
+    model: Comment
+    return: Comment
+
+pages:
+  Post: {}
+  Comment: {}

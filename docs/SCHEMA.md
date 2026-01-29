@@ -97,6 +97,10 @@ Used by RouteGenerator. When `routes` is present and models exist, `routes/archi
 require base_path('routes/architect.php');
 ```
 
+## Optional tests block
+
+Per model or action you can add a `tests` block (when supported by TestGenerator) with expectations (e.g. store validates email, redirects to index). TestGenerator reads this and emits corresponding Pest tests. Schema support for `tests` is optional; see the generator for the expected shape.
+
 ## Validation
 
 Run `php artisan architect:validate` to check syntax and schema. The validator ensures:
@@ -104,6 +108,14 @@ Run `php artisan architect:validate` to check syntax and schema. The validator e
 - At least one of `models`, `actions`, or `pages` is present
 - Model keys match StudlyCase
 - Reserved keys are used correctly
+
+## Package extensions
+
+When certain packages are installed (e.g. Filament, Spatie Media Library), the draft schema can be extended with package-specific keys (e.g. `filament: true` on a model for Filament resource generation, or `media: true` for HasMedia). See [Packages](packages.md) and [Configuration](configuration.md) (`packages` key).
+
+## Stack-specific behaviour
+
+Page and controller output depend on the detected or configured **stack** (Inertia React, Inertia Vue, Livewire, Volt, Blade). The same draft produces different artifact formats per stack. See [Stacks](stacks.md).
 
 ## JSON Schema
 

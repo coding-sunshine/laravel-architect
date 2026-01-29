@@ -16,6 +16,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Application Stack
+    |--------------------------------------------------------------------------
+    |
+    | The frontend stack used by the app (Breeze variants). Used by the
+    | page generator to emit the correct format. Set to "auto" to detect
+    | from the codebase (Inertia React, Inertia Vue, Livewire, Volt, Blade).
+    |
+    */
+    'stack' => env('ARCHITECT_STACK', 'auto'),
+
+    /*
+    |--------------------------------------------------------------------------
     | State File Location
     |--------------------------------------------------------------------------
     |
@@ -40,6 +52,21 @@ return [
         'model' => env('ARCHITECT_AI_MODEL'),
         'max_retries' => 2,
         'retry_with_feedback' => true,
+        'max_context_tokens' => env('ARCHITECT_AI_MAX_CONTEXT_TOKENS'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Orchestration (Command-first)
+    |--------------------------------------------------------------------------
+    |
+    | When command_first is true, build runs Artisan commands (e.g. make:model,
+    | make:migration) first and then patches or fills generated files from the
+    | draft, minimising full-file AI generation. Reduces AI context usage.
+    |
+    */
+    'orchestration' => [
+        'command_first' => env('ARCHITECT_ORCHESTRATION_COMMAND_FIRST', false),
     ],
 
     /*
@@ -167,5 +194,45 @@ return [
         'driver' => 'file',
         'path' => storage_path('architect/history'),
         'max_entries' => 100,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Package Hints (Package Registry)
+    |--------------------------------------------------------------------------
+    |
+    | Optional custom package hints. Keys are Composer package names; values
+    | can include draft_extensions, generator_variants, and suggested_commands.
+    | Merged with Architect's built-in known packages (Filament, Spatie, etc.).
+    |
+    */
+    /*
+    |--------------------------------------------------------------------------
+    | UI Builder (Visual Schema Designer)
+    |--------------------------------------------------------------------------
+    |
+    | Configure the Architect Studio route and frontend driver. When driver
+    | is "auto", the package detects Inertia+shadcn, Livewire+Flux, Flux Pro,
+    | or falls back to Blade.
+    |
+    */
+    'ui' => [
+        'driver' => env('ARCHITECT_UI_DRIVER', 'auto'),
+        'route_prefix' => env('ARCHITECT_UI_ROUTE_PREFIX', 'architect'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Package Hints (Package Registry)
+    |--------------------------------------------------------------------------
+    |
+    */
+    'packages' => [
+        // Example:
+        // 'vendor/package' => [
+        //     'draft_extensions' => ['Add "feature: true" on model for X'],
+        //     'generator_variants' => ['Generator description'],
+        //     'suggested_commands' => ['php artisan some:command'],
+        // ],
     ],
 ];

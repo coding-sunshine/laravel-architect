@@ -72,9 +72,9 @@ final class PackageRegistry
         ];
 
         return [
-            'draft_extensions' => array_merge($base['draft_extensions'] ?? [], $user['draft_extensions'] ?? []),
-            'generator_variants' => array_merge($base['generator_variants'] ?? [], $user['generator_variants'] ?? []),
-            'suggested_commands' => array_merge($base['suggested_commands'] ?? [], $user['suggested_commands'] ?? []),
+            'draft_extensions' => array_merge($base['draft_extensions'], $user['draft_extensions'] ?? []),
+            'generator_variants' => array_merge($base['generator_variants'], $user['generator_variants'] ?? []),
+            'suggested_commands' => array_merge($base['suggested_commands'], $user['suggested_commands'] ?? []),
         ];
     }
 

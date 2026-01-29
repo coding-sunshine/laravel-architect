@@ -70,9 +70,9 @@ final class StackDetector
             return true;
         }
 
-        $files = File::glob($pagesPath.'/**/*.{tsx,jsx}', GLOB_BRACE);
+        $files = File::glob($pagesPath . '/**/*.{tsx,jsx}', GLOB_BRACE);
 
-        return $files !== false && $files !== [];
+        return is_array($files) && $files !== [];
     }
 
     private function hasInertiaVue(): bool
@@ -102,9 +102,9 @@ final class StackDetector
             return false;
         }
 
-        $files = File::glob($pagesPath.'/**/*.vue');
+        $files = File::glob($pagesPath . '/**/*.vue');
 
-        return $files !== false && $files !== [];
+        return is_array($files) && $files !== [];
     }
 
     private function hasLivewire(): bool

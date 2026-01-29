@@ -74,7 +74,7 @@ final class UiDriverDetector
 
         $uiPath = resource_path('js/components/ui');
         if (File::isDirectory($uiPath)) {
-            $hasButton = File::exists($uiPath.'/button.tsx') || File::exists($uiPath.'/button.jsx');
+            $hasButton = File::exists($uiPath . '/button.tsx') || File::exists($uiPath . '/button.jsx');
             if ($hasButton) {
                 return true;
             }
@@ -111,7 +111,7 @@ final class UiDriverDetector
             return false;
         }
 
-        if (env('FLUX_PRO_LICENSE_KEY')) {
+        if (config('architect.ui.flux_pro_license_key')) {
             return true;
         }
 

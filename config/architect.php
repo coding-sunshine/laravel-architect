@@ -219,6 +219,7 @@ return [
     'ui' => [
         'driver' => env('ARCHITECT_UI_DRIVER', 'auto'),
         'route_prefix' => env('ARCHITECT_UI_ROUTE_PREFIX', 'architect'),
+        'flux_pro_license_key' => env('FLUX_PRO_LICENSE_KEY'),
     ],
 
     /*

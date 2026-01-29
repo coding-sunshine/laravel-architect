@@ -37,8 +37,8 @@ final class SeederGenerator implements GeneratorInterface
             $useJson = ! empty($seederConfig['json']);
 
             $tableName = Str::snake(Str::plural($modelName));
-            $className = Str::plural($modelName).'Seeder';
-            $namespace = 'Database\\Seeders\\'.$category;
+            $className = Str::plural($modelName) . 'Seeder';
+            $namespace = 'Database\\Seeders\\' . $category;
             $content = $this->renderSeeder($modelName, $namespace, $className, $tableName, $count, $useJson);
 
             $dir = "{$basePath}/{$category}";
@@ -70,7 +70,7 @@ final class SeederGenerator implements GeneratorInterface
     }
 
     /**
-     * @param  array<string, mixed>  $seederConfig
+     * @param  mixed  $category
      */
     private function resolveCategory(mixed $category): string
     {
@@ -87,11 +87,11 @@ final class SeederGenerator implements GeneratorInterface
         int $count,
         bool $useJson,
     ): string {
-        $modelFqcn = 'App\\Models\\'.$modelName;
+        $modelFqcn = 'App\\Models\\' . $modelName;
 
         $runBody = $useJson
             ? "\$this->seedFromJson();\n        \$this->seedFromFactory();"
-            : '$this->seedFromFactory();';
+            : "\$this->seedFromFactory();";
 
         $methods = '';
         if ($useJson) {

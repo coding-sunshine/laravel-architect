@@ -28,8 +28,8 @@ final class RequestGenerator implements GeneratorInterface
                 continue;
             }
 
-            if (isset($actions['Create'.$modelName])) {
-                $path = $this->writeRequest($basePath, 'Store'.$modelName.'Request', $modelName, $modelDef, 'store');
+            if (isset($actions['Create' . $modelName])) {
+                $path = $this->writeRequest($basePath, 'Store' . $modelName . 'Request', $modelName, $modelDef, 'store');
                 if ($path !== null) {
                     $content = (string) file_get_contents($path);
                     $generated[$path] = [
@@ -39,8 +39,8 @@ final class RequestGenerator implements GeneratorInterface
                     ];
                 }
             }
-            if (isset($actions['Update'.$modelName])) {
-                $path = $this->writeRequest($basePath, 'Update'.$modelName.'Request', $modelName, $modelDef, 'update');
+            if (isset($actions['Update' . $modelName])) {
+                $path = $this->writeRequest($basePath, 'Update' . $modelName . 'Request', $modelName, $modelDef, 'update');
                 if ($path !== null) {
                     $content = (string) file_get_contents($path);
                     $generated[$path] = [
@@ -50,8 +50,8 @@ final class RequestGenerator implements GeneratorInterface
                     ];
                 }
             }
-            if (isset($actions['Delete'.$modelName])) {
-                $path = $this->writeRequest($basePath, 'Delete'.$modelName.'Request', $modelName, $modelDef, 'delete');
+            if (isset($actions['Delete' . $modelName])) {
+                $path = $this->writeRequest($basePath, 'Delete' . $modelName . 'Request', $modelName, $modelDef, 'delete');
                 if ($path !== null) {
                     $content = (string) file_get_contents($path);
                     $generated[$path] = [
@@ -74,7 +74,7 @@ final class RequestGenerator implements GeneratorInterface
     /**
      * @param  array<string, mixed>  $modelDef
      */
-    private function writeRequest(string $basePath, string $className, string $modelName, array $modelDef, string $type): ?string
+    private function writeRequest(string $basePath, string $className, string $modelName, array $modelDef, string $type): string
     {
         $rules = $this->buildRules($modelName, $modelDef, $type);
         $content = $this->renderRequest($className, $modelName, $rules, $type);
@@ -92,7 +92,7 @@ final class RequestGenerator implements GeneratorInterface
     private function buildRules(string $modelName, array $modelDef, string $type): array
     {
         $rules = [];
-        $modelFqcn = 'App\\Models\\'.$modelName;
+        $modelFqcn = 'App\\Models\\' . $modelName;
 
         foreach ($modelDef as $columnName => $definition) {
             if (in_array($columnName, self::SKIP_KEYS, true)) {
@@ -106,7 +106,6 @@ final class RequestGenerator implements GeneratorInterface
             }
             if ($type === 'update' && in_array($columnName, ['password'], true)) {
                 $rules['password'] = ['nullable', 'string', 'confirmed', 'min:8'];
-
                 continue;
             }
             if ($type === 'delete') {
@@ -138,7 +137,7 @@ final class RequestGenerator implements GeneratorInterface
         $unique = str_contains($modifiers, 'unique');
 
         if (preg_match('/^id:(.+)$/i', $typePart, $m)) {
-            return ['required', 'integer', 'exists:'.Str::snake(Str::plural(trim($m[1]))).',id'];
+            return ['required', 'integer', 'exists:' . Str::snake(Str::plural(trim($m[1]))) . ',id'];
         }
 
         [$type] = str_contains($typePart, ':') ? explode(':', $typePart, 2) : [$typePart];
@@ -147,7 +146,7 @@ final class RequestGenerator implements GeneratorInterface
         $base = match ($type) {
             'string' => ['string', 'max:255'],
             'text', 'longtext' => ['string'],
-            'integer', 'bigInteger' => ['integer'],
+            'integer', 'biginteger' => ['integer'],
             'decimal' => ['numeric'],
             'boolean' => ['boolean'],
             'date' => ['date'],
@@ -160,13 +159,13 @@ final class RequestGenerator implements GeneratorInterface
         if (str_contains($columnName, 'email')) {
             $base = ['required', 'string', 'lowercase', 'email', 'max:255'];
             if ($unique) {
-                $base[] = 'unique:'.$modelFqcn.','.$columnName.($update ? ','.'request()->route(\'id\')' : '');
+                $base[] = 'unique:' . $modelFqcn . ',' . $columnName . ($update ? ',' . 'request()->route(\'id\')' : '');
             }
         }
         if (str_contains($columnName, 'password')) {
             return ['required', 'string', 'confirmed', 'min:8'];
         }
-        if (! $nullable && $type !== 'boolean') {
+        if (!$nullable && $type !== 'boolean') {
             array_unshift($base, 'required');
         } elseif ($nullable) {
             $base[] = 'nullable';

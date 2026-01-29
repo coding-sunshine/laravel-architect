@@ -1,0 +1,37 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Called ''env'' outside of the config directory which returns null when the config is cached, use ''config''\.$#'
+			identifier: larastan.noEnvCallsOutsideOfConfig
+			count: 9
+			path: config/architect.php
+
+		-
+			message: '#^Call to method Illuminate\\Contracts\\View\\Factory\:\:exists\(\) with ''architect\:\:studio…'' will always evaluate to false\.$#'
+			identifier: method.impossibleType
+			count: 3
+			path: src/Http/Controllers/ArchitectStudioController.php
+
+		-
+			message: '#^Call to static method text\(\) on an unknown class Prism\\Prism\\Facades\\Prism\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Services/DraftGenerator.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<string, array\<string, mixed\>\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Services/Generators/ActionGenerator.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: src/Services/Generators/RequestGenerator.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: src/Services/StackDetector.php

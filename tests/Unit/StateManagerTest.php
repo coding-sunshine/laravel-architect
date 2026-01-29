@@ -5,7 +5,7 @@ declare(strict_types=1);
 use CodingSunshine\Architect\Services\StateManager;
 
 beforeEach(function () {
-    $this->statePath = sys_get_temp_dir() . '/architect-state-test-' . uniqid() . '.json';
+    $this->statePath = sys_get_temp_dir().'/architect-state-test-'.uniqid().'.json';
     config(['architect.state_path' => $this->statePath]);
     $this->state = app(StateManager::class);
 });

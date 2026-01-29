@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 beforeEach(function () {
-    $this->statePath = base_path('.architect-state-buildcmd-' . uniqid() . '.json');
-    $this->draftPath = base_path('draft-buildcmd-' . uniqid() . '.yaml');
+    $this->statePath = base_path('.architect-state-buildcmd-'.uniqid().'.json');
+    $this->draftPath = base_path('draft-buildcmd-'.uniqid().'.yaml');
     config(['architect.state_path' => $this->statePath]);
     config(['architect.draft_path' => $this->draftPath]);
     file_put_contents($this->draftPath, <<<'YAML'

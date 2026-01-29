@@ -10,7 +10,7 @@ beforeEach(function () {
 });
 
 it('parses valid YAML into Draft', function () {
-    $path = sys_get_temp_dir() . '/draft-test-' . uniqid() . '.yaml';
+    $path = sys_get_temp_dir().'/draft-test-'.uniqid().'.yaml';
     file_put_contents($path, <<<'YAML'
 schema_version: "1.0"
 models:
@@ -42,8 +42,8 @@ it('throws when file does not exist', function () {
 })->throws(InvalidArgumentException::class, 'Draft file not found');
 
 it('throws when YAML is invalid', function () {
-    $path = sys_get_temp_dir() . '/draft-bad-' . uniqid() . '.yaml';
-    file_put_contents($path, "invalid: yaml: [unclosed");
+    $path = sys_get_temp_dir().'/draft-bad-'.uniqid().'.yaml';
+    file_put_contents($path, 'invalid: yaml: [unclosed');
     try {
         $this->parser->parse($path);
     } finally {

@@ -28,6 +28,8 @@ Define your application structure in YAML. Use natural language (with Prism) to 
 composer require --dev coding-sunshine/laravel-architect
 ```
 
+**Dev-only:** Architect is for local development only. Install it in `require-dev`; do not add it to `require`. In production, the Studio routes are not registered and all `architect:*` commands exit with an error. This keeps code generation tooling out of production.
+
 Publish the config (optional):
 
 ```bash

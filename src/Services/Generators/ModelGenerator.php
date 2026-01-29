@@ -49,7 +49,7 @@ final class ModelGenerator implements GeneratorInterface
     /**
      * @param  array<string, mixed>  $modelDef
      */
-    private function renderModel(string $modelName, array $modelDef): string
+    public function renderModel(string $modelName, array $modelDef): string
     {
         $fillable = $this->extractFillable($modelDef);
         $casts = $this->extractCasts($modelDef);

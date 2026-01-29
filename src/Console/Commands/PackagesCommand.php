@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace CodingSunshine\Architect\Console\Commands;
 
+use CodingSunshine\Architect\Console\Concerns\DisallowsProduction;
 use CodingSunshine\Architect\Services\PackageDiscovery;
 use CodingSunshine\Architect\Services\PackageRegistry;
 use Illuminate\Console\Command;
 
 final class PackagesCommand extends Command
 {
+    use DisallowsProduction;
+
     protected $signature = 'architect:packages
                             {--json : Output as JSON}';
 
@@ -17,6 +20,11 @@ final class PackagesCommand extends Command
 
     public function handle(PackageDiscovery $discovery, PackageRegistry $registry): int
     {
+        $exit = $this->disallowProduction();
+        if ($exit !== null) {
+            return $exit;
+        }
+
         $installed = $discovery->installed();
 
         if ($installed === []) {
@@ -58,7 +66,7 @@ final class PackagesCommand extends Command
 
         if ($knownPackages !== []) {
             $this->newLine();
-            $this->info('Known packages: '.implode(', ', $knownPackages));
+            $this->info('Known packages: ' . implode(', ', $knownPackages));
 
             foreach ($knownPackages as $name) {
                 $hints = $registry->get($name);
@@ -67,7 +75,7 @@ final class PackagesCommand extends Command
                 }
 
                 if ($hints['draft_extensions'] !== []) {
-                    $this->line('  '.$name.' draft extensions: '.implode('; ', $hints['draft_extensions']));
+                    $this->line('  ' . $name . ' draft extensions: ' . implode('; ', $hints['draft_extensions']));
                 }
             }
         }

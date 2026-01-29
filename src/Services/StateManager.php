@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace CodingSunshine\Architect\Services;
 
+use CodingSunshine\Architect\Support\HashComputer;
+use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Support\Facades\File;
 
 final class StateManager

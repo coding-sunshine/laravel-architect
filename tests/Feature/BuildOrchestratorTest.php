@@ -6,8 +6,8 @@ use CodingSunshine\Architect\Services\BuildOrchestrator;
 
 beforeEach(function () {
     $this->base = base_path();
-    $this->statePath = $this->base.'/.architect-state-test-'.uniqid().'.json';
-    $this->draftPath = $this->base.'/draft-test-'.uniqid().'.yaml';
+    $this->statePath = $this->base . '/.architect-state-test-' . uniqid() . '.json';
+    $this->draftPath = $this->base . '/draft-test-' . uniqid() . '.yaml';
     config(['architect.state_path' => $this->statePath]);
     config(['architect.draft_path' => $this->draftPath]);
     file_put_contents($this->draftPath, <<<'YAML'

@@ -4,22 +4,30 @@ declare(strict_types=1);
 
 namespace CodingSunshine\Architect\Console\Commands;
 
+use CodingSunshine\Architect\Console\Concerns\DisallowsProduction;
 use CodingSunshine\Architect\Services\StateManager;
 use Illuminate\Console\Command;
 
 final class StatusCommand extends Command
 {
+    use DisallowsProduction;
+
     protected $signature = 'architect:status';
 
     protected $description = 'Show current architect state and generated files';
 
     public function handle(StateManager $state): int
     {
+        $exit = $this->disallowProduction();
+        if ($exit !== null) {
+            return $exit;
+        }
+
         $data = $state->load();
 
         $this->info('Architect state');
-        $this->line('Version: '.($data['version'] ?? 'unknown'));
-        $this->line('Last run: '.($data['lastRun'] ?? 'never'));
+        $this->line('Version: ' . ($data['version'] ?? 'unknown'));
+        $this->line('Last run: ' . ($data['lastRun'] ?? 'never'));
         $this->newLine();
 
         $generated = $data['generated'] ?? [];

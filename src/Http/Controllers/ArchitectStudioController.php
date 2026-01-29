@@ -5,19 +5,32 @@ declare(strict_types=1);
 namespace CodingSunshine\Architect\Http\Controllers;
 
 use CodingSunshine\Architect\Services\DraftParser;
+use CodingSunshine\Architect\Services\StudioContextService;
 use CodingSunshine\Architect\Services\UiDriverDetector;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 use Illuminate\View\View;
 
 final class ArchitectStudioController
 {
-    public function __invoke(UiDriverDetector $detector): View
+    /**
+     * @return View|\Inertia\Response
+     */
+    public function __invoke(UiDriverDetector $detector, StudioContextService $contextService): mixed
     {
         $driver = config('architect.ui.driver', 'auto');
 
         if ($driver === 'auto') {
             $driver = $detector->detect();
+        }
+
+        if ($driver === 'inertia-react') {
+            $props = $contextService->build();
+            $draftPath = config('architect.draft_path', base_path('draft.yaml'));
+            $props['draft'] = File::exists($draftPath) ? File::get($draftPath) : '';
+
+            return view('architect::studio-standalone', ['architectProps' => $props]);
         }
 
         $viewName = $this->resolveView($driver);
@@ -38,7 +51,7 @@ final class ArchitectStudioController
 
             return redirect()->route('architect.studio')->with('architect.message', 'Draft is valid.');
         } catch (\Throwable $e) {
-            return redirect()->route('architect.studio')->with('architect.message', 'Validation failed: '.$e->getMessage())->with('architect.error', true);
+            return redirect()->route('architect.studio')->with('architect.message', 'Validation failed: ' . $e->getMessage())->with('architect.error', true);
         }
     }
 

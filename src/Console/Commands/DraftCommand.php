@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace CodingSunshine\Architect\Console\Commands;
 
+use CodingSunshine\Architect\Console\Concerns\DisallowsProduction;
 use CodingSunshine\Architect\Services\DraftGenerator;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 
 final class DraftCommand extends Command
 {
+    use DisallowsProduction;
+
     protected $signature = 'architect:draft
                             {description? : Natural language description of the application or feature}
                             {--extend= : Path to existing draft to extend}
@@ -20,6 +23,11 @@ final class DraftCommand extends Command
 
     public function handle(DraftGenerator $generator): int
     {
+        $exit = $this->disallowProduction();
+        if ($exit !== null) {
+            return $exit;
+        }
+
         $description = $this->argument('description');
 
         if ($description === null || $description === '') {

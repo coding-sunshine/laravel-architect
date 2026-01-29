@@ -1,0 +1,43 @@
+{
+    "name": "laravel-architect-studio",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "main": "index.tsx",
+    "exports": {
+        ".": "./index.tsx"
+    },
+    "scripts": {
+        "build": "vite build"
+    },
+    "peerDependencies": {
+        "@inertiajs/react": "^2.0.0",
+        "react": "^18.0.0 || ^19.0.0",
+        "react-dom": "^18.0.0 || ^19.0.0"
+    },
+    "devDependencies": {
+        "@tailwindcss/vite": "^4.1.18",
+        "@vitejs/plugin-react": "^5.1.2",
+        "tailwindcss": "^4.1.18",
+        "vite": "^7.3.1"
+    },
+    "dependencies": {
+        "@inertiajs/react": "^2.0.0",
+        "react": "^19.2.4",
+        "react-dom": "^19.2.4",
+        "@radix-ui/react-collapsible": "^1.1.12",
+        "@radix-ui/react-dialog": "^1.1.15",
+        "@radix-ui/react-dropdown-menu": "^2.1.16",
+        "@radix-ui/react-label": "^2.1.8",
+        "@radix-ui/react-tabs": "^1.1.2",
+        "@radix-ui/react-tooltip": "^1.1.6",
+        "cmdk": "^1.0.0",
+        "@radix-ui/react-slot": "^1.2.4",
+        "class-variance-authority": "^0.7.1",
+        "clsx": "^2.1.1",
+        "js-yaml": "^4.1.0",
+        "lucide-react": "^0.563.0",
+        "reactflow": "^11.11.0",
+        "tailwind-merge": "^3.4.0"
+    }
+}

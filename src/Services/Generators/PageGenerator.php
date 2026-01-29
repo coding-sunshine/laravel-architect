@@ -98,8 +98,8 @@ final class PageGenerator implements GeneratorInterface
 
     private function renderInertiaReact(string $pageKey, string $slug, string $view): string
     {
-        $title = Str::title($view).' '.Str::title(str_replace('-', ' ', $slug));
-        $componentName = Str::studly(str_replace('-', ' ', $slug)).Str::studly($view);
+        $title = Str::title($view) . ' ' . Str::title(str_replace('-', ' ', $slug));
+        $componentName = Str::studly(str_replace('-', ' ', $slug)) . Str::studly($view);
 
         return <<<TSX
 import { Head } from '@inertiajs/react';
@@ -121,8 +121,8 @@ TSX;
 
     private function renderInertiaVue(string $pageKey, string $slug, string $view): string
     {
-        $title = Str::title($view).' '.Str::title(str_replace('-', ' ', $slug));
-        $componentName = Str::studly(str_replace('-', ' ', $slug)).Str::studly($view);
+        $title = Str::title($view) . ' ' . Str::title(str_replace('-', ' ', $slug));
+        $componentName = Str::studly(str_replace('-', ' ', $slug)) . Str::studly($view);
 
         return <<<VUE
 <template>
@@ -182,7 +182,7 @@ PHP;
 
     private function renderLivewireView(string $pageKey, string $slug, string $view): string
     {
-        $title = Str::title($view).' '.Str::title(str_replace('-', ' ', $slug));
+        $title = Str::title($view) . ' ' . Str::title(str_replace('-', ' ', $slug));
 
         return <<<BLADE
 <div>
@@ -194,7 +194,7 @@ BLADE;
 
     private function renderVolt(string $pageKey, string $slug, string $view): string
     {
-        $title = Str::title($view).' '.Str::title(str_replace('-', ' ', $slug));
+        $title = Str::title($view) . ' ' . Str::title(str_replace('-', ' ', $slug));
 
         return <<<BLADE
 <?php
@@ -214,7 +214,7 @@ BLADE;
 
     private function renderBlade(string $pageKey, string $slug, string $view): string
     {
-        $title = Str::title($view).' '.Str::title(str_replace('-', ' ', $slug));
+        $title = Str::title($view) . ' ' . Str::title(str_replace('-', ' ', $slug));
 
         return <<<BLADE
 <x-layouts.app :title="'{$title}'">

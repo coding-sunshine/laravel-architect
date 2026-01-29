@@ -23,19 +23,29 @@ final class DraftParser
 
         $content = (string) file_get_contents($path);
 
+        return $this->parseContent($content);
+    }
+
+    /**
+     * Parse draft from YAML content string (for API validation from body).
+     *
+     * @throws \InvalidArgumentException
+     */
+    public function parseContent(string $content): Draft
+    {
         try {
             $data = Yaml::parse($content);
         } catch (ParseException $e) {
-            throw new \InvalidArgumentException("Invalid YAML in {$path}: ".$e->getMessage());
+            throw new \InvalidArgumentException('Invalid YAML: ' . $e->getMessage());
         }
 
         if (! is_array($data)) {
-            throw new \InvalidArgumentException('Draft file must contain a YAML object.');
+            throw new \InvalidArgumentException('Draft must contain a YAML object.');
         }
 
         $errors = $this->validator->validate($data);
         if ($errors !== []) {
-            throw new \InvalidArgumentException("Draft validation failed:\n".implode("\n", $errors));
+            throw new \InvalidArgumentException("Draft validation failed:\n" . implode("\n", $errors));
         }
 
         return $this->hydrate($data);

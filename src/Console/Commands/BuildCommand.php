@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace CodingSunshine\Architect\Console\Commands;
 
+use CodingSunshine\Architect\Console\Concerns\DisallowsProduction;
 use CodingSunshine\Architect\Services\BuildOrchestrator;
 use Illuminate\Console\Command;
 
 final class BuildCommand extends Command
 {
+    use DisallowsProduction;
+
     protected $signature = 'architect:build
                             {draft? : Path to draft file}
                             {--only=* : Only run these generators (e.g. models,actions)}
@@ -18,6 +21,11 @@ final class BuildCommand extends Command
 
     public function handle(BuildOrchestrator $orchestrator): int
     {
+        $exit = $this->disallowProduction();
+        if ($exit !== null) {
+            return $exit;
+        }
+
         $draftPath = $this->argument('draft') ?: '';
         $only = $this->option('only');
         $only = is_array($only) && $only !== [] ? $only : null;

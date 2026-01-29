@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace CodingSunshine\Architect\Console\Commands;
 
+use CodingSunshine\Architect\Console\Concerns\DisallowsProduction;
 use CodingSunshine\Architect\Services\DraftParser;
 use Illuminate\Console\Command;
 
 final class ExplainCommand extends Command
 {
+    use DisallowsProduction;
+
     protected $signature = 'architect:explain
                             {draft? : Path to draft file}
                             {--json : Output as JSON}';
@@ -17,6 +20,11 @@ final class ExplainCommand extends Command
 
     public function handle(DraftParser $parser): int
     {
+        $exit = $this->disallowProduction();
+        if ($exit !== null) {
+            return $exit;
+        }
+
         $draftPath = $this->argument('draft') ?: config('architect.draft_path', base_path('draft.yaml'));
 
         if (! file_exists($draftPath)) {
@@ -49,11 +57,11 @@ final class ExplainCommand extends Command
             return self::SUCCESS;
         }
 
-        $this->info('Draft summary: '.$draftPath);
+        $this->info('Draft summary: ' . $draftPath);
         $this->newLine();
-        $this->line('Models: '.($draft->modelNames() !== [] ? implode(', ', $draft->modelNames()) : '(none)'));
-        $this->line('Actions: '.(array_keys($draft->actions) !== [] ? implode(', ', array_keys($draft->actions)) : '(none)'));
-        $this->line('Pages: '.(array_keys($draft->pages) !== [] ? implode(', ', array_keys($draft->pages)) : '(none)'));
+        $this->line('Models: ' . ($draft->modelNames() !== [] ? implode(', ', $draft->modelNames()) : '(none)'));
+        $this->line('Actions: ' . (array_keys($draft->actions) !== [] ? implode(', ', array_keys($draft->actions)) : '(none)'));
+        $this->line('Pages: ' . (array_keys($draft->pages) !== [] ? implode(', ', array_keys($draft->pages)) : '(none)'));
         $this->newLine();
         $this->line('Run architect:plan for a dry run or architect:build to generate.');
 

@@ -8,7 +8,7 @@ it('shows status and exits successfully', function () {
 });
 
 it('shows table when state has generated files', function () {
-    $statePath = base_path('.architect-state-status-'.uniqid().'.json');
+    $statePath = base_path('.architect-state-status-' . uniqid() . '.json');
     config(['architect.state_path' => $statePath]);
     $state = app(\CodingSunshine\Architect\Services\StateManager::class);
     $state->update('draft.yaml', 'hash1', [

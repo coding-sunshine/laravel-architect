@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace CodingSunshine\Architect\Console\Commands;
 
+use CodingSunshine\Architect\Console\Concerns\DisallowsProduction;
 use CodingSunshine\Architect\Services\DraftParser;
 use Illuminate\Console\Command;
 
 final class ValidateCommand extends Command
 {
+    use DisallowsProduction;
+
     protected $signature = 'architect:validate
                             {draft? : Path to draft file}';
 
@@ -16,6 +19,11 @@ final class ValidateCommand extends Command
 
     public function handle(DraftParser $parser): int
     {
+        $exit = $this->disallowProduction();
+        if ($exit !== null) {
+            return $exit;
+        }
+
         $draftPath = $this->argument('draft') ?: config('architect.draft_path', base_path('draft.yaml'));
 
         if (! file_exists($draftPath)) {

@@ -4,20 +4,28 @@ declare(strict_types=1);
 
 namespace CodingSunshine\Architect\Console\Commands;
 
+use CodingSunshine\Architect\Console\Concerns\DisallowsProduction;
 use CodingSunshine\Architect\Services\StateManager;
 use Illuminate\Console\Command;
 
 final class WhyCommand extends Command
 {
+    use DisallowsProduction;
+
     protected $signature = 'architect:why {path : File path (relative or absolute)}';
 
     protected $description = 'Report which generator produced a generated file';
 
     public function handle(StateManager $state): int
     {
+        $exit = $this->disallowProduction();
+        if ($exit !== null) {
+            return $exit;
+        }
+
         $path = (string) $this->argument('path');
         $base = base_path();
-        $resolved = str_starts_with($path, '/') ? $path : $base.'/'.$path;
+        $resolved = str_starts_with($path, '/') ? $path : $base . '/' . $path;
         $normalized = str_replace('\\', '/', $resolved);
         $relative = str_starts_with($normalized, $base) ? substr($normalized, strlen($base) + 1) : $path;
 

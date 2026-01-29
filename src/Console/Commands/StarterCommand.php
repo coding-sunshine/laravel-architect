@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace CodingSunshine\Architect\Console\Commands;
 
+use CodingSunshine\Architect\Console\Concerns\DisallowsProduction;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 
 final class StarterCommand extends Command
 {
+    use DisallowsProduction;
+
     protected $signature = 'architect:starter
                             {name : Starter name (blog, saas, api)}
                             {--output= : Path to write draft (default: config draft_path)}
@@ -18,16 +21,21 @@ final class StarterCommand extends Command
 
     public function handle(): int
     {
+        $exit = $this->disallowProduction();
+        if ($exit !== null) {
+            return $exit;
+        }
+
         $name = $this->argument('name');
         $packageRoot = dirname(__DIR__, 3);
-        $startersPath = $packageRoot.'/resources/starters';
-        $path = $startersPath.'/'.$name.'.yaml';
+        $startersPath = $packageRoot . '/resources/starters';
+        $path = $startersPath . '/' . $name . '.yaml';
 
         if (! File::exists($path)) {
-            $available = collect(File::glob($startersPath.'/*.yaml'))
+            $available = collect(File::glob($startersPath . '/*.yaml'))
                 ->map(fn ($p) => basename($p, '.yaml'))
                 ->implode(', ');
-            $this->error("Starter '{$name}' not found. Available: ".($available ?: 'none'));
+            $this->error("Starter '{$name}' not found. Available: " . ($available ?: 'none'));
 
             return self::FAILURE;
         }

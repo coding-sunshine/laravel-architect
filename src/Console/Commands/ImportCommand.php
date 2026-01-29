@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace CodingSunshine\Architect\Console\Commands;
 
+use CodingSunshine\Architect\Console\Concerns\DisallowsProduction;
 use CodingSunshine\Architect\Services\ImportService;
 use Illuminate\Console\Command;
 use Symfony\Component\Yaml\Yaml;
 
 final class ImportCommand extends Command
 {
+    use DisallowsProduction;
+
     protected $signature = 'architect:import
                             {--models= : Comma-separated model names to import}
                             {--output= : Path to write draft YAML (default: stdout)}
@@ -19,6 +22,11 @@ final class ImportCommand extends Command
 
     public function handle(ImportService $import): int
     {
+        $exit = $this->disallowProduction();
+        if ($exit !== null) {
+            return $exit;
+        }
+
         $modelFilter = $this->option('models')
             ? array_map('trim', explode(',', (string) $this->option('models')))
             : null;

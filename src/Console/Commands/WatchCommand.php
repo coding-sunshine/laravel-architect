@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace CodingSunshine\Architect\Console\Commands;
 
+use CodingSunshine\Architect\Console\Concerns\DisallowsProduction;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Process;
 
 final class WatchCommand extends Command
 {
+    use DisallowsProduction;
+
     protected $signature = 'architect:watch
                             {--poll : Use polling instead of file system events (for limited environments)}
                             {--interval=1 : Polling interval in seconds when using --poll}';
@@ -17,6 +20,11 @@ final class WatchCommand extends Command
 
     public function handle(): int
     {
+        $exit = $this->disallowProduction();
+        if ($exit !== null) {
+            return $exit;
+        }
+
         $draftPath = config('architect.draft_path', base_path('draft.yaml'));
 
         if (! file_exists($draftPath)) {

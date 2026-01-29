@@ -6,7 +6,7 @@ use CodingSunshine\Architect\Services\ChangeDetector;
 use CodingSunshine\Architect\Services\StateManager;
 
 beforeEach(function () {
-    $this->statePath = sys_get_temp_dir().'/architect-change-'.uniqid().'.json';
+    $this->statePath = sys_get_temp_dir() . '/architect-change-' . uniqid() . '.json';
     config(['architect.state_path' => $this->statePath]);
     $this->state = app(StateManager::class);
     $this->detector = app(ChangeDetector::class);
@@ -19,7 +19,7 @@ afterEach(function () {
 });
 
 it('reports draft changed when no previous hash', function () {
-    $path = sys_get_temp_dir().'/draft-'.uniqid().'.yaml';
+    $path = sys_get_temp_dir() . '/draft-' . uniqid() . '.yaml';
     file_put_contents($path, 'models: {}');
     $hash = ChangeDetector::computeDraftHash($path);
     expect($this->detector->hasDraftChanged($path, $hash))->toBeTrue();
@@ -40,7 +40,7 @@ it('reports draft changed when hash differs', function () {
 });
 
 it('computes same hash for same content', function () {
-    $path = sys_get_temp_dir().'/draft-hash-'.uniqid().'.yaml';
+    $path = sys_get_temp_dir() . '/draft-hash-' . uniqid() . '.yaml';
     $content = "schema_version: \"1.0\"\nmodels:\n  Post: {}";
     file_put_contents($path, $content);
     $h1 = ChangeDetector::computeDraftHash($path);

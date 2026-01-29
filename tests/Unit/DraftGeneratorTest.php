@@ -26,7 +26,7 @@ it('infers model name from description', function () {
 });
 
 it('includes extend context when existing draft path given', function () {
-    $tmp = sys_get_temp_dir().'/existing-'.uniqid().'.yaml';
+    $tmp = sys_get_temp_dir() . '/existing-' . uniqid() . '.yaml';
     file_put_contents($tmp, "schema_version: \"1.0\"\nmodels:\n  User: {}");
     try {
         $yaml = $this->generator->generate('add posts', $tmp);

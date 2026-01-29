@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace CodingSunshine\Architect\Console\Commands;
 
+use CodingSunshine\Architect\Console\Concerns\DisallowsProduction;
 use CodingSunshine\Architect\Services\DraftParser;
 use Illuminate\Console\Command;
 
 final class FixCommand extends Command
 {
+    use DisallowsProduction;
+
     protected $signature = 'architect:fix
                             {draft? : Path to draft file}
                             {--dry-run : Show suggested fix without applying}
@@ -18,6 +21,11 @@ final class FixCommand extends Command
 
     public function handle(DraftParser $parser): int
     {
+        $exit = $this->disallowProduction();
+        if ($exit !== null) {
+            return $exit;
+        }
+
         $draftPath = $this->argument('draft') ?: config('architect.draft_path', base_path('draft.yaml'));
 
         if (! file_exists($draftPath)) {
@@ -32,7 +40,7 @@ final class FixCommand extends Command
 
             return self::SUCCESS;
         } catch (\Throwable $e) {
-            $this->error('Validation failed: '.$e->getMessage());
+            $this->error('Validation failed: ' . $e->getMessage());
 
             if ($this->option('ai')) {
                 $this->warn('AI fix (Prism) is not yet implemented. Fix the draft manually using the error message above.');

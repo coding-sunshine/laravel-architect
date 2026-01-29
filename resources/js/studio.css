@@ -1,0 +1,174 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    --radius-sm: 0.25rem;
+    --radius-md: 0.375rem;
+    --radius-lg: 0.5rem;
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+}
+
+:root {
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0 0);
+    --primary: oklch(0.205 0 0);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.97 0 0);
+    --secondary-foreground: oklch(0.205 0 0);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.556 0 0);
+    --accent: oklch(0.97 0 0);
+    --accent-foreground: oklch(0.205 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --destructive-foreground: oklch(0.577 0.245 27.325);
+    --border: oklch(0.922 0 0);
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.87 0 0);
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+}
+
+.dark {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.145 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.145 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.985 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.396 0.141 25.723);
+    --destructive-foreground: oklch(0.637 0.237 25.331);
+    --border: oklch(0.269 0 0);
+    --input: oklch(0.269 0 0);
+    --ring: oklch(0.439 0 0);
+    --sidebar: oklch(0.205 0 0);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(0.269 0 0);
+}
+
+@layer base {
+    html {
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        font-size: 14px;
+    }
+}
+
+/* Lovable-style: vibrant floating mesh gradient background */
+.studio-bg-wrapper {
+    position: fixed;
+    inset: 0;
+    background-color: var(--background);
+    z-index: -1;
+    overflow: hidden;
+}
+
+.studio-bg-wrapper::before {
+    content: '';
+    position: absolute;
+    inset: -50%;
+    background: 
+        radial-gradient(circle at 30% 30%, rgba(255, 0, 212, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 70% 20%, rgba(0, 102, 255, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 50% 80%, rgba(0, 255, 200, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 20% 70%, rgba(157, 0, 255, 0.12) 0%, transparent 50%);
+    filter: blur(80px);
+    animation: studio-mesh-float 20s ease-in-out infinite alternate;
+}
+
+.dark .studio-bg-wrapper::before {
+    background: 
+        radial-gradient(circle at 30% 30%, rgba(255, 0, 212, 0.2) 0%, transparent 50%),
+        radial-gradient(circle at 70% 20%, rgba(0, 102, 255, 0.2) 0%, transparent 50%),
+        radial-gradient(circle at 50% 80%, rgba(0, 255, 200, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 20% 70%, rgba(157, 0, 255, 0.18) 0%, transparent 50%);
+}
+
+@keyframes studio-mesh-float {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    100% { transform: translate(5%, 5%) rotate(5deg); }
+}
+
+/* Glass effect for header / context strip */
+.studio-header-glass {
+    background: rgba(255, 255, 255, 0.7) !important;
+    backdrop-filter: blur(20px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+.dark .studio-header-glass {
+    background: rgba(15, 15, 20, 0.7) !important;
+    border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.studio-context-strip {
+    background: rgba(255, 255, 255, 0.4) !important;
+    backdrop-filter: blur(16px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+.dark .studio-context-strip {
+    background: rgba(20, 20, 30, 0.4) !important;
+    border-bottom-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Lovable-style: bottom results panel */
+.studio-results-panel {
+    border-radius: 2rem 2rem 0 0 !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 -10px 50px -10px rgba(0, 0, 0, 0.1) !important;
+    background: rgba(255, 255, 255, 0.8) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+}
+.dark .studio-results-panel {
+    background: rgba(10, 10, 15, 0.8) !important;
+    box-shadow: 0 -10px 50px -10px rgba(0, 0, 0, 0.4) !important;
+    border-top-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Card styling */
+.studio-card {
+    background: rgba(255, 255, 255, 0.6) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04) !important;
+}
+.dark .studio-card {
+    background: rgba(30, 30, 40, 0.5) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+}

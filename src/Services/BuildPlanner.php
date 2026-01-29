@@ -22,20 +22,20 @@ final class BuildPlanner
         foreach ($draft->modelNames() as $modelName) {
             $steps[] = [
                 'type' => 'artisan',
-                'name' => 'model:'.$modelName,
+                'name' => 'model:' . $modelName,
                 'description' => "Run make:model {$modelName} -m -f",
                 'command' => "make:model {$modelName} -m -f",
             ];
             $steps[] = [
                 'type' => 'generate',
-                'name' => 'patch_model:'.$modelName,
-                'description' => 'Patch model fillable/casts from draft',
+                'name' => 'patch_model:' . $modelName,
+                'description' => "Patch model fillable/casts from draft",
                 'generator' => 'model',
             ];
             $steps[] = [
                 'type' => 'generate',
-                'name' => 'patch_migration:'.$modelName,
-                'description' => 'Patch migration from draft',
+                'name' => 'patch_migration:' . $modelName,
+                'description' => "Patch migration from draft",
                 'generator' => 'migration',
             ];
         }

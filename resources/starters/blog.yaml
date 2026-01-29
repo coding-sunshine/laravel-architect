@@ -1,6 +1,14 @@
 schema_version: "1.0"
 
 models:
+  User:
+    name: string:255
+    email: string:255 unique
+    email_verified_at: timestamp nullable
+    password: string:255
+    relationships:
+      hasMany: "Post:author, Comment:author"
+    timestamps: true
   Post:
     title: string:400
     slug: string:255 unique
@@ -18,8 +26,7 @@ models:
     post_id: id:Post foreign
     author_id: id:User foreign
     relationships:
-      belongsTo: Post
-      belongsTo: User:author
+      belongsTo: "Post, User:author"
 
 actions:
   CreatePost:

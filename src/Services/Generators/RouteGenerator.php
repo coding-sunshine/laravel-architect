@@ -20,7 +20,7 @@ final class RouteGenerator implements GeneratorInterface
         $routesPath = base_path('routes/architect.php');
 
         if ($draft->modelNames() === [] && $draft->routes === []) {
-            return new BuildResult;
+            return new BuildResult();
         }
 
         $content = $this->renderRoutesFile($draft);
@@ -46,7 +46,7 @@ final class RouteGenerator implements GeneratorInterface
         $resourceBlocks = [];
         foreach ($draft->modelNames() as $modelName) {
             $slug = Str::kebab(Str::plural($modelName));
-            $controller = $modelName.'Controller';
+            $controller = $modelName . 'Controller';
             $name = Str::camel(Str::singular($modelName));
             $resourceBlocks[] = "    Route::resource('{$slug}', {$controller}::class)->names('{$name}');";
         }

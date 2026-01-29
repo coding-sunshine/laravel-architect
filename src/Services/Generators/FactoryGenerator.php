@@ -10,7 +10,6 @@ use CodingSunshine\Architect\Support\Draft;
 use CodingSunshine\Architect\Support\FileOwnership;
 use CodingSunshine\Architect\Support\HashComputer;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Str;
 
 final class FactoryGenerator implements GeneratorInterface
 {
@@ -86,7 +85,7 @@ final class FactoryGenerator implements GeneratorInterface
             $lines['password'] = "self::\$password ??= Hash::make('password'),";
         }
         if (! array_key_exists('remember_token', $lines)) {
-            $lines['remember_token'] = "Str::random(10),";
+            $lines['remember_token'] = 'Str::random(10),';
         }
         $usesTimestamps = ($modelDef['timestamps'] ?? true) !== false;
         if ($usesTimestamps && ! array_key_exists('created_at', $lines)) {
@@ -172,7 +171,7 @@ final class FactoryGenerator implements GeneratorInterface
     {
         $indented = [];
         foreach ($definitionLines as $line) {
-            $indented[] = '            ' . $line;
+            $indented[] = '            '.$line;
         }
         $body = implode("\n", $indented);
 

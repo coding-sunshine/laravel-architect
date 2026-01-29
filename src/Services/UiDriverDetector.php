@@ -74,7 +74,7 @@ final class UiDriverDetector
 
         $uiPath = resource_path('js/components/ui');
         if (File::isDirectory($uiPath)) {
-            $hasButton = File::exists($uiPath . '/button.tsx') || File::exists($uiPath . '/button.jsx');
+            $hasButton = File::exists($uiPath.'/button.tsx') || File::exists($uiPath.'/button.jsx');
             if ($hasButton) {
                 return true;
             }

@@ -10,7 +10,6 @@ use CodingSunshine\Architect\Support\Draft;
 use CodingSunshine\Architect\Support\FileOwnership;
 use CodingSunshine\Architect\Support\HashComputer;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Str;
 
 final class TypeScriptGenerator implements GeneratorInterface
 {
@@ -31,10 +30,10 @@ final class TypeScriptGenerator implements GeneratorInterface
         }
 
         if ($interfaces === []) {
-            return new BuildResult();
+            return new BuildResult;
         }
 
-        $content = "/** Architect-generated TypeScript interfaces from draft.\n * Do not edit by hand; regenerate with architect:build.\n */\n\n" . implode("\n\n", $interfaces) . "\n";
+        $content = "/** Architect-generated TypeScript interfaces from draft.\n * Do not edit by hand; regenerate with architect:build.\n */\n\n".implode("\n\n", $interfaces)."\n";
         File::ensureDirectoryExists(dirname($typesPath));
         File::put($typesPath, $content);
 

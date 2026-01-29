@@ -64,7 +64,7 @@ final class ModelGenerator implements GeneratorInterface
 
         $traitsBlock = $this->formatTraits($traits, $usesSoftDeletes);
         if ($traitsBlock !== '') {
-            $traitsBlock = $traitsBlock . "\n\n    ";
+            $traitsBlock = $traitsBlock."\n\n    ";
         }
 
         return str_replace(
@@ -169,7 +169,7 @@ final class ModelGenerator implements GeneratorInterface
             return '[]';
         }
 
-        return "[\n            '" . implode("',\n            '", $fillable) . "',\n        ]";
+        return "[\n            '".implode("',\n            '", $fillable)."',\n        ]";
     }
 
     /**
@@ -178,7 +178,7 @@ final class ModelGenerator implements GeneratorInterface
     private function formatCasts(array $casts): string
     {
         if ($casts === []) {
-            return "return [];";
+            return 'return [];';
         }
 
         $lines = [];
@@ -186,7 +186,7 @@ final class ModelGenerator implements GeneratorInterface
             $lines[] = "            '{$key}' => '{$value}',";
         }
 
-        return "return [\n" . implode("\n", $lines) . "\n        ];";
+        return "return [\n".implode("\n", $lines)."\n        ];";
     }
 
     /**
@@ -203,7 +203,7 @@ final class ModelGenerator implements GeneratorInterface
             return '';
         }
 
-        return 'use ' . implode(";\n    use ", $all) . ';';
+        return 'use '.implode(";\n    use ", $all).';';
     }
 
     /**
@@ -246,7 +246,7 @@ PHP;
             return $custom;
         }
 
-        $pkg = dirname(__DIR__, 2) . '/stubs/' . $name;
+        $pkg = dirname(__DIR__, 2).'/stubs/'.$name;
 
         return file_exists($pkg) ? $pkg : null;
     }

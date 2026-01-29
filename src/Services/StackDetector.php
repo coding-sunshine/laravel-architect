@@ -70,7 +70,7 @@ final class StackDetector
             return true;
         }
 
-        $files = File::glob($pagesPath . '/**/*.{tsx,jsx}', GLOB_BRACE);
+        $files = File::glob($pagesPath.'/**/*.{tsx,jsx}', GLOB_BRACE);
 
         return is_array($files) && $files !== [];
     }
@@ -102,7 +102,7 @@ final class StackDetector
             return false;
         }
 
-        $files = File::glob($pagesPath . '/**/*.vue');
+        $files = File::glob($pagesPath.'/**/*.vue');
 
         return is_array($files) && $files !== [];
     }

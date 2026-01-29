@@ -16,7 +16,7 @@ it('returns single model definition', function () {
 });
 
 it('defaults to empty arrays and schema 1.0', function () {
-    $draft = new Draft();
+    $draft = new Draft;
     expect($draft->models)->toBe([])
         ->and($draft->actions)->toBe([])
         ->and($draft->pages)->toBe([])

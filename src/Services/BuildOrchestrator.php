@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace CodingSunshine\Architect\Services;
 
 use CodingSunshine\Architect\Support\BuildResult;
-use CodingSunshine\Architect\Support\Draft;
-use CodingSunshine\Architect\Support\HashComputer;
 use Illuminate\Support\Facades\File;
 
 final class BuildOrchestrator
@@ -41,6 +39,7 @@ final class BuildOrchestrator
         foreach ($generators as $name => $generator) {
             if (! $generator->supports($draft)) {
                 $skipped[] = $name;
+
                 continue;
             }
 
@@ -52,7 +51,7 @@ final class BuildOrchestrator
                 $warnings = array_merge($warnings, $result->warnings);
                 $errors = array_merge($errors, $result->errors);
             } catch (\Throwable $e) {
-                $errors[] = "{$name}: " . $e->getMessage();
+                $errors[] = "{$name}: ".$e->getMessage();
             }
         }
 

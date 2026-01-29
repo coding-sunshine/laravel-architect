@@ -86,12 +86,12 @@ final class StudioContextService
     private function starterNames(): array
     {
         $packageRoot = dirname(__DIR__, 2);
-        $startersPath = $packageRoot . '/resources/starters';
+        $startersPath = $packageRoot.'/resources/starters';
         if (! File::isDirectory($startersPath)) {
             return [];
         }
 
-        $files = File::glob($startersPath . '/*.yaml');
+        $files = File::glob($startersPath.'/*.yaml');
         if (! is_array($files)) {
             return [];
         }

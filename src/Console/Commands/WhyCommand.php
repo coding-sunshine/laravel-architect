@@ -25,7 +25,7 @@ final class WhyCommand extends Command
 
         $path = (string) $this->argument('path');
         $base = base_path();
-        $resolved = str_starts_with($path, '/') ? $path : $base . '/' . $path;
+        $resolved = str_starts_with($path, '/') ? $path : $base.'/'.$path;
         $normalized = str_replace('\\', '/', $resolved);
         $relative = str_starts_with($normalized, $base) ? substr($normalized, strlen($base) + 1) : $path;
 

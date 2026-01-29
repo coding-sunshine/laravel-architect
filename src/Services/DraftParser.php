@@ -36,7 +36,7 @@ final class DraftParser
         try {
             $data = Yaml::parse($content);
         } catch (ParseException $e) {
-            throw new \InvalidArgumentException('Invalid YAML: ' . $e->getMessage());
+            throw new \InvalidArgumentException('Invalid YAML: '.$e->getMessage());
         }
 
         if (! is_array($data)) {
@@ -45,7 +45,7 @@ final class DraftParser
 
         $errors = $this->validator->validate($data);
         if ($errors !== []) {
-            throw new \InvalidArgumentException("Draft validation failed:\n" . implode("\n", $errors));
+            throw new \InvalidArgumentException("Draft validation failed:\n".implode("\n", $errors));
         }
 
         return $this->hydrate($data);

@@ -50,7 +50,7 @@ final class ArchitectApiController
         try {
             $data = Yaml::parse($content);
         } catch (\Throwable $e) {
-            return response()->json(['valid' => false, 'errors' => ['Invalid YAML: ' . $e->getMessage()]], 422);
+            return response()->json(['valid' => false, 'errors' => ['Invalid YAML: '.$e->getMessage()]], 422);
         }
 
         if (! is_array($data)) {
@@ -76,7 +76,7 @@ final class ArchitectApiController
             try {
                 $data = Yaml::parse($yaml);
             } catch (\Throwable $e) {
-                return response()->json(['valid' => false, 'errors' => ['Invalid YAML: ' . $e->getMessage()]]);
+                return response()->json(['valid' => false, 'errors' => ['Invalid YAML: '.$e->getMessage()]]);
             }
 
             if (! is_array($data)) {
@@ -187,7 +187,7 @@ final class ArchitectApiController
     public function getStarter(string $name): JsonResponse
     {
         $packageRoot = dirname(__DIR__, 2);
-        $path = $packageRoot . '/resources/starters/' . $name . '.yaml';
+        $path = $packageRoot.'/resources/starters/'.$name.'.yaml';
 
         if (! File::exists($path)) {
             return response()->json(['error' => "Starter '{$name}' not found."], 404);
@@ -260,6 +260,7 @@ final class ArchitectApiController
             $def = $draft->getModel($name);
             if ($def) {
                 $gen = app(\CodingSunshine\Architect\Services\Generators\ModelGenerator::class);
+
                 return response()->json(['code' => $gen->renderModel($name, $def)]);
             }
         }
@@ -268,6 +269,7 @@ final class ArchitectApiController
             $def = $draft->actions[$name] ?? null;
             if ($def) {
                 $gen = app(\CodingSunshine\Architect\Services\Generators\ActionGenerator::class);
+
                 return response()->json(['code' => $gen->renderAction($name, $def)]);
             }
         }

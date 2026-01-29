@@ -17,12 +17,12 @@ final class PackageDiscovery
     {
         $base = base_path('vendor/composer');
 
-        if (File::exists($base . '/installed.json')) {
-            return $this->fromInstalledJson($base . '/installed.json');
+        if (File::exists($base.'/installed.json')) {
+            return $this->fromInstalledJson($base.'/installed.json');
         }
 
-        if (File::exists($base . '/installed.php')) {
-            return $this->fromInstalledPhp($base . '/installed.php');
+        if (File::exists($base.'/installed.php')) {
+            return $this->fromInstalledPhp($base.'/installed.php');
         }
 
         if (File::exists(base_path('composer.lock'))) {

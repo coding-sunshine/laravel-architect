@@ -26,8 +26,8 @@ final class TestGenerator implements GeneratorInterface
             }
 
             $slug = Str::kebab(Str::plural($modelName));
-            $controllerName = $modelName . 'Controller';
-            $testName = $controllerName . 'Test';
+            $controllerName = $modelName.'Controller';
+            $testName = $controllerName.'Test';
             $content = $this->renderTest($modelName, $slug, $controllerName, $testName);
             $path = "{$basePath}/{$testName}.php";
 
@@ -52,7 +52,7 @@ final class TestGenerator implements GeneratorInterface
 
     private function renderTest(string $modelName, string $slug, string $controllerName, string $testName): string
     {
-        $modelFqcn = 'App\\Models\\' . $modelName;
+        $modelFqcn = 'App\\Models\\'.$modelName;
 
         return <<<PHP
 <?php

@@ -66,7 +66,7 @@ final class PackagesCommand extends Command
 
         if ($knownPackages !== []) {
             $this->newLine();
-            $this->info('Known packages: ' . implode(', ', $knownPackages));
+            $this->info('Known packages: '.implode(', ', $knownPackages));
 
             foreach ($knownPackages as $name) {
                 $hints = $registry->get($name);
@@ -75,7 +75,7 @@ final class PackagesCommand extends Command
                 }
 
                 if ($hints['draft_extensions'] !== []) {
-                    $this->line('  ' . $name . ' draft extensions: ' . implode('; ', $hints['draft_extensions']));
+                    $this->line('  '.$name.' draft extensions: '.implode('; ', $hints['draft_extensions']));
                 }
             }
         }

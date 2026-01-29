@@ -58,7 +58,7 @@ final class ActionGenerator implements GeneratorInterface
         if ($model !== null) {
             $lines[] = "use App\\Models\\{$model};";
         }
-        $useBlock = implode("\n", $lines) . "\n\n";
+        $useBlock = implode("\n", $lines)."\n\n";
 
         $paramList = $this->buildParamList($params, $model);
         $returnType = $this->normalizeReturnType($returnType, $model);
@@ -99,7 +99,7 @@ PHP;
             if (is_array($p) && isset($p['name'], $p['type'])) {
                 $name = $p['name'];
                 $type = $p['type'];
-            } elseif ($model !== null && in_array(strtolower($name), ['model', strtolower($model), strtolower($model) . 'id'], true)) {
+            } elseif ($model !== null && in_array(strtolower($name), ['model', strtolower($model), strtolower($model).'id'], true)) {
                 $type = $model;
             }
             $parts[] = "{$type} \${$name}";

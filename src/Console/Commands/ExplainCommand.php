@@ -57,11 +57,11 @@ final class ExplainCommand extends Command
             return self::SUCCESS;
         }
 
-        $this->info('Draft summary: ' . $draftPath);
+        $this->info('Draft summary: '.$draftPath);
         $this->newLine();
-        $this->line('Models: ' . ($draft->modelNames() !== [] ? implode(', ', $draft->modelNames()) : '(none)'));
-        $this->line('Actions: ' . (array_keys($draft->actions) !== [] ? implode(', ', array_keys($draft->actions)) : '(none)'));
-        $this->line('Pages: ' . (array_keys($draft->pages) !== [] ? implode(', ', array_keys($draft->pages)) : '(none)'));
+        $this->line('Models: '.($draft->modelNames() !== [] ? implode(', ', $draft->modelNames()) : '(none)'));
+        $this->line('Actions: '.(array_keys($draft->actions) !== [] ? implode(', ', array_keys($draft->actions)) : '(none)'));
+        $this->line('Pages: '.(array_keys($draft->pages) !== [] ? implode(', ', array_keys($draft->pages)) : '(none)'));
         $this->newLine();
         $this->line('Run architect:plan for a dry run or architect:build to generate.');
 

@@ -28,14 +28,14 @@ final class StarterCommand extends Command
 
         $name = $this->argument('name');
         $packageRoot = dirname(__DIR__, 3);
-        $startersPath = $packageRoot . '/resources/starters';
-        $path = $startersPath . '/' . $name . '.yaml';
+        $startersPath = $packageRoot.'/resources/starters';
+        $path = $startersPath.'/'.$name.'.yaml';
 
         if (! File::exists($path)) {
-            $available = collect(File::glob($startersPath . '/*.yaml'))
+            $available = collect(File::glob($startersPath.'/*.yaml'))
                 ->map(fn ($p) => basename($p, '.yaml'))
                 ->implode(', ');
-            $this->error("Starter '{$name}' not found. Available: " . ($available ?: 'none'));
+            $this->error("Starter '{$name}' not found. Available: ".($available ?: 'none'));
 
             return self::FAILURE;
         }

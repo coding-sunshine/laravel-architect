@@ -26,8 +26,8 @@ final class StatusCommand extends Command
         $data = $state->load();
 
         $this->info('Architect state');
-        $this->line('Version: ' . ($data['version'] ?? 'unknown'));
-        $this->line('Last run: ' . ($data['lastRun'] ?? 'never'));
+        $this->line('Version: '.($data['version'] ?? 'unknown'));
+        $this->line('Last run: '.($data['lastRun'] ?? 'never'));
         $this->newLine();
 
         $generated = $data['generated'] ?? [];

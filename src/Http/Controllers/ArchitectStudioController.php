@@ -51,7 +51,7 @@ final class ArchitectStudioController
 
             return redirect()->route('architect.studio')->with('architect.message', 'Draft is valid.');
         } catch (\Throwable $e) {
-            return redirect()->route('architect.studio')->with('architect.message', 'Validation failed: ' . $e->getMessage())->with('architect.error', true);
+            return redirect()->route('architect.studio')->with('architect.message', 'Validation failed: '.$e->getMessage())->with('architect.error', true);
         }
     }
 

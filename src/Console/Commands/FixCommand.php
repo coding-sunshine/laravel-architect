@@ -40,7 +40,7 @@ final class FixCommand extends Command
 
             return self::SUCCESS;
         } catch (\Throwable $e) {
-            $this->error('Validation failed: ' . $e->getMessage());
+            $this->error('Validation failed: '.$e->getMessage());
 
             if ($this->option('ai')) {
                 $this->warn('AI fix (Prism) is not yet implemented. Fix the draft manually using the error message above.');

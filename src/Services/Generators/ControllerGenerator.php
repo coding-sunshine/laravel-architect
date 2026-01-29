@@ -30,7 +30,7 @@ final class ControllerGenerator implements GeneratorInterface
                 continue;
             }
 
-            $controllerName = $modelName . 'Controller';
+            $controllerName = $modelName.'Controller';
             $content = $this->renderController($modelName, $draft->actions);
             $path = "{$basePath}/{$controllerName}.php";
 
@@ -82,12 +82,12 @@ final class ControllerGenerator implements GeneratorInterface
     {
         $slug = Str::kebab(Str::plural($modelName));
         $pagePath = $slug;
-        $createAction = 'Create' . $modelName;
-        $updateAction = 'Update' . $modelName;
-        $deleteAction = 'Delete' . $modelName;
-        $storeRequest = 'Store' . $modelName . 'Request';
-        $updateRequest = 'Update' . $modelName . 'Request';
-        $deleteRequest = 'Delete' . $modelName . 'Request';
+        $createAction = 'Create'.$modelName;
+        $updateAction = 'Update'.$modelName;
+        $deleteAction = 'Delete'.$modelName;
+        $storeRequest = 'Store'.$modelName.'Request';
+        $updateRequest = 'Update'.$modelName.'Request';
+        $deleteRequest = 'Delete'.$modelName.'Request';
         $hasCreate = isset($actions[$createAction]);
         $hasUpdate = isset($actions[$updateAction]);
         $hasDelete = isset($actions[$deleteAction]);
@@ -123,22 +123,22 @@ final class ControllerGenerator implements GeneratorInterface
         }
 
         $useLines = [
-            'use App\\Models\\' . $modelName . ';',
+            'use App\\Models\\'.$modelName.';',
             'use Illuminate\\Http\\RedirectResponse;',
             'use Inertia\\Inertia;',
             'use Inertia\\Response;',
         ];
         if ($hasCreate) {
-            $useLines[] = 'use App\\Actions\\' . $createAction . ';';
-            $useLines[] = 'use App\\Http\\Requests\\' . $storeRequest . ';';
+            $useLines[] = 'use App\\Actions\\'.$createAction.';';
+            $useLines[] = 'use App\\Http\\Requests\\'.$storeRequest.';';
         }
         if ($hasUpdate) {
-            $useLines[] = 'use App\\Actions\\' . $updateAction . ';';
-            $useLines[] = 'use App\\Http\\Requests\\' . $updateRequest . ';';
+            $useLines[] = 'use App\\Actions\\'.$updateAction.';';
+            $useLines[] = 'use App\\Http\\Requests\\'.$updateRequest.';';
         }
         if ($hasDelete) {
-            $useLines[] = 'use App\\Actions\\' . $deleteAction . ';';
-            $useLines[] = 'use App\\Http\\Requests\\' . $deleteRequest . ';';
+            $useLines[] = 'use App\\Actions\\'.$deleteAction.';';
+            $useLines[] = 'use App\\Http\\Requests\\'.$deleteRequest.';';
         }
 
         return $this->buildControllerClass($modelName, $useLines, $methods);
@@ -150,17 +150,17 @@ final class ControllerGenerator implements GeneratorInterface
     private function renderViewController(string $modelName, array $actions, string $stack): string
     {
         $slug = Str::kebab(Str::plural($modelName));
-        $createAction = 'Create' . $modelName;
-        $updateAction = 'Update' . $modelName;
-        $deleteAction = 'Delete' . $modelName;
-        $storeRequest = 'Store' . $modelName . 'Request';
-        $updateRequest = 'Update' . $modelName . 'Request';
-        $deleteRequest = 'Delete' . $modelName . 'Request';
+        $createAction = 'Create'.$modelName;
+        $updateAction = 'Update'.$modelName;
+        $deleteAction = 'Delete'.$modelName;
+        $storeRequest = 'Store'.$modelName.'Request';
+        $updateRequest = 'Update'.$modelName.'Request';
+        $deleteRequest = 'Delete'.$modelName.'Request';
         $hasCreate = isset($actions[$createAction]);
         $hasUpdate = isset($actions[$updateAction]);
         $hasDelete = isset($actions[$deleteAction]);
 
-        $viewBase = $stack === 'blade' ? 'pages.' . $slug . '.' : 'livewire.' . $slug . '-';
+        $viewBase = $stack === 'blade' ? 'pages.'.$slug.'.' : 'livewire.'.$slug.'-';
 
         $methods = [];
         $methods[] = $this->renderMethod('index', "return view('{$viewBase}index')", '\\Illuminate\\View\\View', [], true);
@@ -193,20 +193,20 @@ final class ControllerGenerator implements GeneratorInterface
         }
 
         $useLines = [
-            'use App\\Models\\' . $modelName . ';',
+            'use App\\Models\\'.$modelName.';',
             'use Illuminate\\Http\\RedirectResponse;',
         ];
         if ($hasCreate) {
-            $useLines[] = 'use App\\Actions\\' . $createAction . ';';
-            $useLines[] = 'use App\\Http\\Requests\\' . $storeRequest . ';';
+            $useLines[] = 'use App\\Actions\\'.$createAction.';';
+            $useLines[] = 'use App\\Http\\Requests\\'.$storeRequest.';';
         }
         if ($hasUpdate) {
-            $useLines[] = 'use App\\Actions\\' . $updateAction . ';';
-            $useLines[] = 'use App\\Http\\Requests\\' . $updateRequest . ';';
+            $useLines[] = 'use App\\Actions\\'.$updateAction.';';
+            $useLines[] = 'use App\\Http\\Requests\\'.$updateRequest.';';
         }
         if ($hasDelete) {
-            $useLines[] = 'use App\\Actions\\' . $deleteAction . ';';
-            $useLines[] = 'use App\\Http\\Requests\\' . $deleteRequest . ';';
+            $useLines[] = 'use App\\Actions\\'.$deleteAction.';';
+            $useLines[] = 'use App\\Http\\Requests\\'.$deleteRequest.';';
         }
 
         return $this->buildControllerClass($modelName, $useLines, $methods);

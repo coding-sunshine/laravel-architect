@@ -1,93 +1,163 @@
-# :package_description
+# Laravel Architect
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/:vendor_slug/:package_slug.svg?style=flat-square)](https://packagist.org/packages/:vendor_slug/:package_slug)
-[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/:vendor_slug/:package_slug/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/:vendor_slug/:package_slug/actions?query=workflow%3Arun-tests+branch%3Amain)
-[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/:vendor_slug/:package_slug/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/:vendor_slug/:package_slug/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
-[![Total Downloads](https://img.shields.io/packagist/dt/:vendor_slug/:package_slug.svg?style=flat-square)](https://packagist.org/packages/:vendor_slug/:package_slug)
-<!--delete-->
----
-This repo can be used to scaffold a Laravel package. Follow these steps to get started:
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/coding-sunshine/laravel-architect.svg)](https://packagist.org/packages/coding-sunshine/laravel-architect)
+[![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE.md)
 
-1. Press the "Use this template" button at the top of this repo to create a new repo with the contents of this skeleton.
-2. Run "php ./configure.php" to run a script that will replace all placeholders throughout all the files.
-3. Have fun creating your package.
-4. If you need help creating a package, consider picking up our <a href="https://laravelpackage.training">Laravel Package Training</a> video course.
----
-<!--/delete-->
-This is where your description should go. Limit it to a paragraph or two. Consider adding a small example.
+AI-powered, YAML-driven scaffolding for Laravel applications.
 
-## Support us
+Define your application structure in YAML. Use natural language (with Prism) to draft it. Generate models, migrations, actions, controllers, pages, and tests—idempotent and trackable.
 
-[<img src="https://github-ads.s3.eu-central-1.amazonaws.com/:package_name.jpg?t=1" width="419px" />](https://spatie.be/github-ad-click/:package_name)
+## Features
 
-We invest a lot of resources into creating [best in class open source packages](https://spatie.be/open-source). You can support us by [buying one of our paid products](https://spatie.be/open-source/support-us).
+- **YAML as source of truth** – Define models, relationships, actions, and pages in `draft.yaml`
+- **AI-powered drafting** – Generate YAML from natural language when [Prism](https://github.com/echolabs/prism) is available
+- **Idempotent builds** – Run `architect:build` repeatedly without duplicates
+- **Change detection** – Only regenerate what changed
+- **Convention-based** – Generates code that follows Laravel and your project conventions (Actions, thin controllers, Inertia)
 
-We highly appreciate you sending us a postcard from your hometown, mentioning which of our package(s) you are using. You'll find our address on [our contact page](https://spatie.be/about-us). We publish all received postcards on [our virtual postcard wall](https://spatie.be/open-source/postcards).
+## Requirements
+
+- PHP 8.2+
+- Laravel 11 or 12
+- Symfony YAML
 
 ## Installation
 
-You can install the package via composer:
+```bash
+composer require --dev coding-sunshine/laravel-architect
+```
+
+Publish the config (optional):
 
 ```bash
-composer require :vendor_slug/:package_slug
+php artisan vendor:publish --tag=architect-config
 ```
 
-You can publish and run the migrations with:
+## Quick Start
+
+### 1. Create a draft
+
+**From natural language** (when Prism is installed):
 
 ```bash
-php artisan vendor:publish --tag=":package_slug-migrations"
-php artisan migrate
+php artisan architect:draft "blog with posts, comments, and tags"
 ```
 
-You can publish the config file with:
+**Or create `draft.yaml` manually:**
+
+```yaml
+schema_version: "1.0"
+
+models:
+  Post:
+    title: string:400
+    content: longtext
+    published_at: timestamp nullable
+    author_id: id:User foreign
+    relationships:
+      belongsTo: User:author
+      hasMany: Comment
+    seeder:
+      category: development
+      count: 10
+
+actions:
+  CreatePost:
+    model: Post
+    return: Post
+  UpdatePost:
+    model: Post
+    params: [Post, attributes]
+    return: void
+  DeletePost:
+    model: Post
+    params: [Post]
+    return: void
+
+pages:
+  Post: {}
+```
+
+### 2. Validate
 
 ```bash
-php artisan vendor:publish --tag=":package_slug-config"
+php artisan architect:validate
 ```
 
-This is the contents of the published config file:
-
-```php
-return [
-];
-```
-
-Optionally, you can publish the views using
+### 3. Plan (dry run)
 
 ```bash
-php artisan vendor:publish --tag=":package_slug-views"
+php artisan architect:plan
 ```
 
-## Usage
-
-```php
-$variable = new VendorName\Skeleton();
-echo $variable->echoPhrase('Hello, VendorName!');
-```
-
-## Testing
+### 4. Build
 
 ```bash
-composer test
+php artisan architect:build
 ```
 
-## Changelog
+### 5. Status
 
-Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
+```bash
+php artisan architect:status
+```
 
-## Contributing
+## Commands
 
-Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
+| Command | Description |
+|---------|-------------|
+| `architect:draft` | Generate draft.yaml from natural language |
+| `architect:validate` | Validate draft syntax and schema |
+| `architect:plan` | Show what would be generated (dry run) |
+| `architect:build` | Generate code from draft (idempotent) |
+| `architect:status` | Show current state and generated files |
+| `architect:import` | Reverse-engineer codebase to YAML (planned) |
 
-## Security Vulnerabilities
+## Schema Reference
 
-Please review [our security policy](../../security/policy) on how to report security vulnerabilities.
+For a full description of `draft.yaml` (models, columns, actions, pages, routes), see [docs/SCHEMA.md](docs/SCHEMA.md).
 
-## Credits
+## Configuration
 
-- [:author_name](https://github.com/:author_username)
-- [All Contributors](../../contributors)
+See `config/architect.php` for:
+
+- Draft and state file paths
+- AI provider settings (Prism)
+- File ownership (regenerate vs scaffold_only)
+- Conventions (use_actions, test_framework, etc.)
+- Validation rule mappings
+- Post-build hooks
+
+## Development
+
+When developing the package locally, link it from your app:
+
+```json
+{
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../laravel-architect",
+            "options": { "symlink": true }
+        }
+    ],
+    "require-dev": {
+        "coding-sunshine/laravel-architect": "dev-main"
+    }
+}
+```
+
+Then run `composer update coding-sunshine/laravel-architect`.
+
+## Publishing
+
+Maintainers: see [docs/PUBLISHING.md](docs/PUBLISHING.md) for tagging and Packagist release steps.
 
 ## License
 
-The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+GPL-3.0-or-later. See [LICENSE.md](LICENSE.md).
+
+## Credits
+
+- [Hardik Shah](https://github.com/coding-sunshine)
+- [All Contributors](https://github.com/coding-sunshine/laravel-architect/contributors)

@@ -1,24 +1,32 @@
 {
-    "name": ":vendor_slug/:package_slug",
-    "description": ":package_description",
+    "name": "coding-sunshine/laravel-architect",
+    "description": "AI-powered, YAML-driven scaffolding for Laravel applications",
     "keywords": [
-        ":vendor_name",
         "laravel",
-        ":package_slug"
+        "scaffold",
+        "generator",
+        "yaml",
+        "ai",
+        "code-generation"
     ],
-    "homepage": "https://github.com/:vendor_slug/:package_slug",
-    "license": "MIT",
+    "homepage": "https://github.com/coding-sunshine/laravel-architect",
+    "license": "GPL-3.0-or-later",
     "authors": [
         {
-            "name": ":author_name",
-            "email": "author@domain.com",
+            "name": "Hardik Shah",
+            "homepage": "https://github.com/coding-sunshine",
             "role": "Developer"
         }
     ],
     "require": {
-        "php": "^8.4",
+        "php": "^8.2",
         "spatie/laravel-package-tools": "^1.16",
-        "illuminate/contracts": "^11.0||^12.0"
+        "illuminate/contracts": "^11.0||^12.0",
+        "illuminate/console": "^11.0||^12.0",
+        "illuminate/filesystem": "^11.0||^12.0",
+        "illuminate/support": "^11.0||^12.0",
+        "symfony/yaml": "^7.0",
+        "opis/json-schema": "^2.3"
     },
     "require-dev": {
         "laravel/pint": "^1.14",
@@ -30,18 +38,20 @@
         "pestphp/pest-plugin-laravel": "^4.0",
         "phpstan/extension-installer": "^1.4",
         "phpstan/phpstan-deprecation-rules": "^2.0",
-        "phpstan/phpstan-phpunit": "^2.0",
-        "spatie/laravel-ray": "^1.35"
+        "phpstan/phpstan-phpunit": "^2.0"
+    },
+    "suggest": {
+        "echolabs/prism": "For AI-powered YAML generation and debugging"
     },
     "autoload": {
         "psr-4": {
-            "VendorName\\Skeleton\\": "src/",
-            "VendorName\\Skeleton\\Database\\Factories\\": "database/factories/"
+            "CodingSunshine\\Architect\\": "src/",
+            "CodingSunshine\\Architect\\Database\\Factories\\": "database/factories/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "VendorName\\Skeleton\\Tests\\": "tests/",
+            "CodingSunshine\\Architect\\Tests\\": "tests/",
             "Workbench\\App\\": "workbench/app/"
         }
     },
@@ -63,10 +73,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "VendorName\\Skeleton\\SkeletonServiceProvider"
+                "CodingSunshine\\Architect\\ArchitectServiceProvider"
             ],
             "aliases": {
-                "Skeleton": "VendorName\\Skeleton\\Facades\\Skeleton"
+                "Architect": "CodingSunshine\\Architect\\Facades\\Architect"
             }
         }
     },

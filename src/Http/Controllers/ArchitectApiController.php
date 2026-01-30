@@ -10,6 +10,8 @@ use CodingSunshine\Architect\Services\BuildPlanner;
 use CodingSunshine\Architect\Services\DraftGenerator;
 use CodingSunshine\Architect\Services\DraftParser;
 use CodingSunshine\Architect\Services\ImportService;
+use CodingSunshine\Architect\Services\PackageSuggestionService;
+use CodingSunshine\Architect\Services\PackageValidationService;
 use CodingSunshine\Architect\Services\StateManager;
 use CodingSunshine\Architect\Services\StudioContextService;
 use Illuminate\Http\JsonResponse;
@@ -275,5 +277,66 @@ final class ArchitectApiController
         }
 
         return response()->json(['code' => '// No preview available for this item.']);
+    }
+
+    /**
+     * Analyze a draft and return suggestions and validation results.
+     *
+     * Returns package-aware suggestions for:
+     * - Schema additions based on field names
+     * - Missing traits based on schema keys
+     * - Relationship suggestions
+     * - Validation warnings for missing packages
+     */
+    public function analyze(
+        Request $request,
+        DraftParser $parser,
+        PackageSuggestionService $suggestionService,
+        PackageValidationService $validationService,
+    ): JsonResponse {
+        $yaml = $request->input('yaml');
+
+        // Parse from request or file
+        if (is_string($yaml) && $yaml !== '') {
+            try {
+                $data = Yaml::parse($yaml);
+            } catch (\Throwable $e) {
+                return response()->json(['error' => 'Invalid YAML: '.$e->getMessage()], 422);
+            }
+
+            if (! is_array($data)) {
+                return response()->json(['error' => 'Draft must be a YAML object.'], 422);
+            }
+
+            // Create a temporary draft object
+            $draft = new \CodingSunshine\Architect\Support\Draft(
+                models: $data['models'] ?? [],
+                actions: $data['actions'] ?? [],
+                pages: $data['pages'] ?? [],
+            );
+        } else {
+            $path = config('architect.draft_path', base_path('draft.yaml'));
+
+            if (! File::exists($path)) {
+                return response()->json(['error' => 'Draft file not found.'], 404);
+            }
+
+            try {
+                $draft = $parser->parse($path);
+            } catch (\InvalidArgumentException $e) {
+                return response()->json(['error' => $e->getMessage()], 422);
+            }
+        }
+
+        // Get suggestions
+        $suggestions = $suggestionService->analyze($draft);
+
+        // Get validation results
+        $validation = $validationService->validate($draft);
+
+        return response()->json([
+            'suggestions' => $suggestions,
+            'validation' => $validation,
+        ]);
     }
 }

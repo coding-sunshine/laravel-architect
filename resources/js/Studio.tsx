@@ -119,6 +119,23 @@ function mergeDraft(
     return out;
 }
 
+export interface SchemaHint {
+    schema_key: string;
+    description: string;
+    requires_package: string;
+    available: boolean;
+}
+
+export interface GeneratorVariants {
+    stack: string;
+    api_auth: string;
+    test_framework: string;
+    admin_panel: string;
+    api_docs: string;
+    broadcasting: string;
+    features: Record<string, boolean>;
+}
+
 export interface ArchitectStudioProps {
     /** When true, do not render Inertia Head (for standalone Blade view). */
     standalone?: boolean;
@@ -139,6 +156,9 @@ export interface ArchitectStudioProps {
     ai_enabled: boolean;
     starters: string[];
     draft: string;
+    variants?: GeneratorVariants;
+    features?: Record<string, boolean>;
+    schema_hints?: Record<string, SchemaHint>;
 }
 
 function getCsrfToken(): string | null {
@@ -159,6 +179,9 @@ export default function ArchitectStudio({
     ai_enabled,
     starters,
     draft: initialDraft,
+    variants,
+    features,
+    schema_hints,
 }: ArchitectStudioProps) {
     const [draftYaml, setDraftYaml] = useState(initialDraft ?? '');
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -206,7 +229,15 @@ export default function ArchitectStudio({
     const [previewCode, setPreviewCode] = useState<string | null>(null);
     const [previewLoading, setPreviewLoading] = useState(false);
     const [previewItem, setPreviewItem] = useState<{ type: string; name: string } | null>(null);
+    const [featuresPanelOpen, setFeaturesPanelOpen] = useState(false);
     const fitViewRef = useRef<(() => void) | null>(null);
+
+    // Compute available features count
+    const availableFeaturesCount = useMemo(() => {
+        if (!schema_hints) return 0;
+        return Object.values(schema_hints).filter((h) => h.available).length;
+    }, [schema_hints]);
+    const totalFeaturesCount = schema_hints ? Object.keys(schema_hints).length : 0;
     const [draftHistory, setDraftHistory] = useState<string[]>(() => {
         try {
             const raw = localStorage.getItem(DRAFT_HISTORY_KEY);
@@ -660,6 +691,22 @@ export default function ArchitectStudio({
                                             </div>
                                         ))}
                                     </div>
+                                </TooltipContent>
+                            </Tooltip>
+                        )}
+                        {schema_hints && (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Badge
+                                        variant="outline"
+                                        className="cursor-pointer hover:bg-accent"
+                                        onClick={() => setFeaturesPanelOpen(true)}
+                                    >
+                                        {availableFeaturesCount}/{totalFeaturesCount} features
+                                    </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom">
+                                    Click to see available schema features
                                 </TooltipContent>
                             </Tooltip>
                         )}
@@ -1805,6 +1852,87 @@ export default function ArchitectStudio({
                     ⌘K search · F Fit view · V Validate · P Plan · B Build
                 </div>
             </CommandDialog>
+
+            {/* Features Panel */}
+            <Sheet open={featuresPanelOpen} onOpenChange={setFeaturesPanelOpen}>
+                <SheetContent side="right" className="w-[400px] sm:w-[540px]">
+                    <SheetHeader>
+                        <SheetTitle>Available Schema Features</SheetTitle>
+                        <SheetDescription>
+                            These features can be added to your models based on installed packages.
+                            Green features are available, gray features require additional packages.
+                        </SheetDescription>
+                    </SheetHeader>
+                    <div className="mt-4 space-y-3 overflow-y-auto pr-2" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+                        {schema_hints &&
+                            Object.entries(schema_hints).map(([key, hint]) => (
+                                <div
+                                    key={key}
+                                    className={cn(
+                                        'rounded-lg border p-3',
+                                        hint.available
+                                            ? 'border-green-500/30 bg-green-500/5'
+                                            : 'border-muted bg-muted/30 opacity-60'
+                                    )}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <code className="font-mono text-sm font-medium">
+                                            {hint.schema_key}: true
+                                        </code>
+                                        <Badge variant={hint.available ? 'default' : 'secondary'}>
+                                            {hint.available ? 'Available' : 'Not installed'}
+                                        </Badge>
+                                    </div>
+                                    <p className="mt-1 text-sm text-muted-foreground">
+                                        {hint.description}
+                                    </p>
+                                    <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                                        <span>Requires:</span>
+                                        <code className="rounded bg-muted px-1 py-0.5 font-mono">
+                                            {hint.requires_package}
+                                        </code>
+                                    </div>
+                                </div>
+                            ))}
+                    </div>
+                    {variants && (
+                        <div className="mt-6 border-t pt-4">
+                            <h4 className="mb-3 font-medium">Generator Variants</h4>
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                                <div className="flex justify-between rounded bg-muted/50 px-2 py-1">
+                                    <span className="text-muted-foreground">Stack</span>
+                                    <span className="font-mono">{variants.stack}</span>
+                                </div>
+                                <div className="flex justify-between rounded bg-muted/50 px-2 py-1">
+                                    <span className="text-muted-foreground">API Auth</span>
+                                    <span className="font-mono">{variants.api_auth}</span>
+                                </div>
+                                <div className="flex justify-between rounded bg-muted/50 px-2 py-1">
+                                    <span className="text-muted-foreground">Tests</span>
+                                    <span className="font-mono">{variants.test_framework}</span>
+                                </div>
+                                <div className="flex justify-between rounded bg-muted/50 px-2 py-1">
+                                    <span className="text-muted-foreground">Admin</span>
+                                    <span className="font-mono">{variants.admin_panel}</span>
+                                </div>
+                                <div className="flex justify-between rounded bg-muted/50 px-2 py-1">
+                                    <span className="text-muted-foreground">API Docs</span>
+                                    <span className="font-mono">{variants.api_docs}</span>
+                                </div>
+                                <div className="flex justify-between rounded bg-muted/50 px-2 py-1">
+                                    <span className="text-muted-foreground">Broadcasting</span>
+                                    <span className="font-mono">{variants.broadcasting}</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    <SheetFooter className="mt-6">
+                        <Button variant="outline" onClick={() => setFeaturesPanelOpen(false)}>
+                            Close
+                        </Button>
+                    </SheetFooter>
+                </SheetContent>
+            </Sheet>
         </TooltipProvider>
     );
 }

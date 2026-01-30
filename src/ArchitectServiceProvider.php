@@ -26,6 +26,7 @@ use CodingSunshine\Architect\Services\ChangeDetector;
 use CodingSunshine\Architect\Services\DraftGenerator;
 use CodingSunshine\Architect\Services\DraftParser;
 use CodingSunshine\Architect\Services\Generators\ActionGenerator;
+use CodingSunshine\Architect\Services\Generators\ApiControllerGenerator;
 use CodingSunshine\Architect\Services\Generators\ControllerGenerator;
 use CodingSunshine\Architect\Services\Generators\FactoryGenerator;
 use CodingSunshine\Architect\Services\Generators\MigrationGenerator;
@@ -36,9 +37,12 @@ use CodingSunshine\Architect\Services\Generators\RouteGenerator;
 use CodingSunshine\Architect\Services\Generators\SeederGenerator;
 use CodingSunshine\Architect\Services\Generators\TestGenerator;
 use CodingSunshine\Architect\Services\Generators\TypeScriptGenerator;
+use CodingSunshine\Architect\Services\GeneratorVariantResolver;
 use CodingSunshine\Architect\Services\ImportService;
 use CodingSunshine\Architect\Services\PackageDiscovery;
 use CodingSunshine\Architect\Services\PackageRegistry;
+use CodingSunshine\Architect\Services\PackageSuggestionService;
+use CodingSunshine\Architect\Services\PackageValidationService;
 use CodingSunshine\Architect\Services\StackDetector;
 use CodingSunshine\Architect\Services\StateManager;
 use CodingSunshine\Architect\Services\StudioContextService;
@@ -87,6 +91,12 @@ final class ArchitectServiceProvider extends PackageServiceProvider
         });
         $this->app->singleton(UiDriverDetector::class);
         $this->app->singleton(ImportService::class);
+
+        // Package-aware services
+        $this->app->singleton(GeneratorVariantResolver::class);
+        $this->app->singleton(PackageSuggestionService::class);
+        $this->app->singleton(PackageValidationService::class);
+
         $this->app->singleton(StudioContextService::class);
 
         $this->registerGenerators();
@@ -101,6 +111,7 @@ final class ArchitectServiceProvider extends PackageServiceProvider
             'seeder' => SeederGenerator::class,
             'action' => ActionGenerator::class,
             'controller' => ControllerGenerator::class,
+            'api_controller' => ApiControllerGenerator::class,
             'request' => RequestGenerator::class,
             'route' => RouteGenerator::class,
             'page' => PageGenerator::class,
@@ -175,6 +186,7 @@ final class ArchitectServiceProvider extends PackageServiceProvider
             $router->middleware('web')->get($apiPrefix.'/status', [ArchitectApiController::class, 'status'])->name('architect.api.status');
             $router->middleware('web')->get($apiPrefix.'/explain', [ArchitectApiController::class, 'explain'])->name('architect.api.explain');
             $router->middleware('web')->get($apiPrefix.'/preview', [ArchitectApiController::class, 'preview'])->name('architect.api.preview');
+            $router->middleware('web')->post($apiPrefix.'/analyze', [ArchitectApiController::class, 'analyze'])->name('architect.api.analyze');
         });
     }
 

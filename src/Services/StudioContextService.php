@@ -14,12 +14,25 @@ final class StudioContextService
         private readonly PackageDiscovery $packageDiscovery,
         private readonly PackageRegistry $packageRegistry,
         private readonly ImportService $importService,
+        private readonly GeneratorVariantResolver $variantResolver,
     ) {}
 
     /**
-     * Build context payload for the Studio UI (stack, packages, models, paths, ai, starters).
+     * Build context payload for the Studio UI (stack, packages, models, paths, ai, starters, variants, features).
      *
-     * @return array{stack: string, packages: array<int, array{name: string, version: string, hints: array|null}, existing_models: array<int, array{name: string, table: string}>, draft_path: string, state_path: string, schema_version: string, ai_enabled: bool, starters: array<int, string>}
+     * @return array{
+     *     stack: string,
+     *     packages: array<int, array{name: string, version: string, hints: array|null}>,
+     *     existing_models: array<int, array{name: string, table: string}>,
+     *     draft_path: string,
+     *     state_path: string,
+     *     schema_version: string,
+     *     ai_enabled: bool,
+     *     starters: array<int, string>,
+     *     variants: array{stack: string, api_auth: string, test_framework: string, admin_panel: string, api_docs: string, broadcasting: string},
+     *     features: array<string, bool>,
+     *     schema_hints: array<string, array{schema_key: string, description: string, requires_package: string, available: bool}>,
+     * }
      */
     public function build(): array
     {
@@ -50,6 +63,11 @@ final class StudioContextService
 
         $starters = $this->starterNames();
 
+        // Add generator variants and features
+        $variants = $this->variantResolver->resolveAll();
+        $features = $this->variantResolver->resolveFeatures();
+        $schemaHints = $this->buildSchemaHints($installed);
+
         return [
             'stack' => $stack,
             'packages' => $packages,
@@ -59,7 +77,96 @@ final class StudioContextService
             'schema_version' => $schemaVersion,
             'ai_enabled' => $aiEnabled,
             'starters' => $starters,
+            'variants' => $variants,
+            'features' => $features,
+            'schema_hints' => $schemaHints,
         ];
+    }
+
+    /**
+     * Build schema hints showing available features.
+     *
+     * @param  array<string, string>  $installed
+     * @return array<string, array{schema_key: string, description: string, requires_package: string, available: bool}>
+     */
+    private function buildSchemaHints(array $installed): array
+    {
+        $hints = [
+            'media' => [
+                'schema_key' => 'media',
+                'description' => 'Enable file uploads with Media Library. Adds HasMedia interface and InteractsWithMedia trait.',
+                'requires_package' => 'spatie/laravel-medialibrary',
+                'available' => isset($installed['spatie/laravel-medialibrary']),
+            ],
+            'searchable' => [
+                'schema_key' => 'searchable',
+                'description' => 'Enable full-text search with Scout. Adds Searchable trait.',
+                'requires_package' => 'laravel/scout',
+                'available' => isset($installed['laravel/scout']),
+            ],
+            'billable' => [
+                'schema_key' => 'billable',
+                'description' => 'Enable Stripe billing with Cashier. Adds Billable trait.',
+                'requires_package' => 'laravel/cashier',
+                'available' => isset($installed['laravel/cashier']) || isset($installed['laravel/cashier-stripe']),
+            ],
+            'filament' => [
+                'schema_key' => 'filament',
+                'description' => 'Generate Filament admin resource for this model.',
+                'requires_package' => 'filament/filament',
+                'available' => isset($installed['filament/filament']),
+            ],
+            'sluggable' => [
+                'schema_key' => 'sluggable',
+                'description' => 'Auto-generate URL slugs. Adds HasSlug trait.',
+                'requires_package' => 'spatie/laravel-sluggable',
+                'available' => isset($installed['spatie/laravel-sluggable']),
+            ],
+            'tags' => [
+                'schema_key' => 'tags',
+                'description' => 'Enable tagging functionality. Adds HasTags trait.',
+                'requires_package' => 'spatie/laravel-tags',
+                'available' => isset($installed['spatie/laravel-tags']),
+            ],
+            'activity_log' => [
+                'schema_key' => 'activity_log',
+                'description' => 'Log model activity. Adds LogsActivity trait.',
+                'requires_package' => 'spatie/laravel-activitylog',
+                'available' => isset($installed['spatie/laravel-activitylog']),
+            ],
+            'roles' => [
+                'schema_key' => 'roles',
+                'description' => 'Enable role-based permissions. Adds HasRoles trait.',
+                'requires_package' => 'spatie/laravel-permission',
+                'available' => isset($installed['spatie/laravel-permission']),
+            ],
+            'api_tokens' => [
+                'schema_key' => 'api_tokens',
+                'description' => 'Enable API token authentication with Sanctum. Adds HasApiTokens trait.',
+                'requires_package' => 'laravel/sanctum',
+                'available' => isset($installed['laravel/sanctum']),
+            ],
+            'softDeletes' => [
+                'schema_key' => 'softDeletes',
+                'description' => 'Enable soft deletes. Adds SoftDeletes trait and deleted_at column.',
+                'requires_package' => 'laravel/framework',
+                'available' => true,
+            ],
+            'exportable' => [
+                'schema_key' => 'exportable',
+                'description' => 'Enable Excel export functionality.',
+                'requires_package' => 'maatwebsite/excel',
+                'available' => isset($installed['maatwebsite/excel']),
+            ],
+            'broadcasting' => [
+                'schema_key' => 'broadcasting',
+                'description' => 'Enable WebSocket broadcasting for real-time updates.',
+                'requires_package' => 'laravel/reverb',
+                'available' => isset($installed['laravel/reverb']) || isset($installed['pusher/pusher-php-server']),
+            ],
+        ];
+
+        return $hints;
     }
 
     /**

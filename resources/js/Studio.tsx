@@ -625,7 +625,8 @@ export default function ArchitectStudio({
         setIsDark(next);
     }, []);
 
-    const knownPackagesCount = packages.filter((p) => p.hints !== null).length;
+    const knownPackages = packages.filter((p) => p.hints !== null);
+    const knownPackagesCount = knownPackages.length;
     const truncatePath = (path: string, max = 40) =>
         path.length <= max ? path : path.slice(0, max - 3) + '...';
 
@@ -638,10 +639,29 @@ export default function ArchitectStudio({
                         <span className="font-semibold">Architect Studio</span>
                         <Badge variant="secondary">{stack}</Badge>
                         {knownPackagesCount > 0 && (
-                            <Badge variant="outline">
-                                {knownPackagesCount} known package
-                                {knownPackagesCount !== 1 ? 's' : ''}
-                            </Badge>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Badge variant="outline" className="cursor-help">
+                                        {knownPackagesCount} known package
+                                        {knownPackagesCount !== 1 ? 's' : ''}
+                                    </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom" className="max-w-xs">
+                                    <div className="space-y-1 text-xs">
+                                        <div className="font-medium">Detected packages:</div>
+                                        {knownPackages.map((pkg) => (
+                                            <div key={pkg.name} className="flex items-center gap-2">
+                                                <span className="font-mono text-muted-foreground">
+                                                    {pkg.name}
+                                                </span>
+                                                <span className="text-muted-foreground/70">
+                                                    {pkg.version}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </TooltipContent>
+                            </Tooltip>
                         )}
                     </div>
                     <div className="flex flex-wrap items-center gap-2 md:gap-3">

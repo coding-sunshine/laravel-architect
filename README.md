@@ -10,11 +10,41 @@ Define your application structure in YAML. Use natural language (with Prism) to 
 ## Features
 
 - **YAML as source of truth** – Define models, relationships, actions, and pages in `draft.yaml`
-- **AI-powered drafting** – Generate YAML from natural language when [Prism](https://github.com/echolabs/prism) is available
+- **AI-powered drafting** – Generate YAML from natural language when [Prism](https://github.com/prism-php/prism) is available
 - **Idempotent builds** – Run `architect:build` repeatedly without duplicates
 - **Change detection** – Only regenerate what changed
 - **Convention-based** – Generates code that follows Laravel and your project conventions (Actions, thin controllers, Inertia)
 - **Stack-aware** – Detects Inertia React, Inertia Vue, Livewire, Volt, or Blade and generates the right pages and controllers
+- **Package-aware** – Automatically detects 30+ Laravel packages and suggests schema features, traits, and configurations
+- **AI Assistant** – Interactive chat assistant for schema design, code generation, and package recommendations
+
+## AI-Powered Features (Requires Prism)
+
+When [Prism](https://github.com/prism-php/prism) is installed, Architect unlocks powerful AI capabilities:
+
+### AI Assistant Chat
+An interactive assistant in the Studio UI that can:
+- Answer questions about your schema design
+- Suggest fields, relationships, and package features
+- Help configure Laravel packages
+- Generate code snippets on demand
+- Validate your schema against best practices
+
+### Intelligent Package Analysis
+- **Dynamic Package Discovery** – Analyzes any installed package to understand its traits, interfaces, and capabilities
+- **Smart Suggestions** – Recommends schema features based on model semantics (e.g., "Product should have sluggable")
+- **Conflict Detection** – Identifies potential package conflicts before they cause issues
+
+### AI Code Generation
+- **Context-Aware Factories** – Generates realistic fake data based on model type
+- **Smart Migrations** – Includes package-specific columns automatically
+- **Comprehensive Tests** – Creates test cases covering all features and edge cases
+- **Package Boilerplate** – Generates complete integration code for adding package features
+
+### Schema Validation
+- **Performance Analysis** – Detects N+1 risks and missing indexes
+- **Security Review** – Identifies mass assignment and data exposure risks
+- **Best Practices** – Validates against Laravel conventions with actionable suggestions
 
 ## Requirements
 
@@ -137,6 +167,7 @@ Full documentation lives in the [docs/](docs/) directory. Start with the [Docume
 | [Stacks](docs/stacks.md) | Supported stacks, detection, and override. |
 | [Packages](docs/packages.md) | Detected packages, registry, and how to extend. |
 | [AI and Prism](docs/ai-and-prism.md) | AI drafting, Prism setup, context minimisation. |
+| [AI Features](docs/ai-features.md) | Advanced AI capabilities: chat assistant, smart suggestions, code generation. |
 | [Visual Designer](docs/visual-designer.md) | Open the Studio, frontend stack, command–UI parity. |
 | [Templates](docs/templates.md) | Starter drafts (blog, saas, api) and custom starters. |
 | [Troubleshooting](docs/troubleshooting.md) | Common errors and fixes. |
@@ -151,6 +182,32 @@ See `config/architect.php` for:
 - Conventions (use_actions, test_framework, etc.)
 - Validation rule mappings
 - Post-build hooks
+
+### AI Configuration
+
+```php
+// config/architect.php
+'ai' => [
+    'enabled' => env('ARCHITECT_AI_ENABLED', true),
+    'provider' => env('ARCHITECT_AI_PROVIDER', 'anthropic'),
+    'model' => env('ARCHITECT_AI_MODEL'), // auto-detected per provider
+    'max_retries' => 2,
+    'retry_with_feedback' => true,
+],
+```
+
+Set your API key in `.env`:
+
+```env
+# For Anthropic
+ANTHROPIC_API_KEY=sk-...
+
+# For OpenAI
+OPENAI_API_KEY=sk-...
+
+# For OpenRouter
+OPENROUTER_API_KEY=sk-...
+```
 
 ## Development
 

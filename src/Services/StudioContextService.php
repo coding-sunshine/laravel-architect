@@ -32,6 +32,7 @@ final class StudioContextService
      *     variants: array{stack: string, api_auth: string, test_framework: string, admin_panel: string, api_docs: string, broadcasting: string},
      *     features: array<string, bool>,
      *     schema_hints: array<string, array{schema_key: string, description: string, requires_package: string, available: bool}>,
+     *     ai_capabilities: array{available: bool, provider: string|null, features: array<string, bool>},
      * }
      */
     public function build(): array
@@ -67,6 +68,7 @@ final class StudioContextService
         $variants = $this->variantResolver->resolveAll();
         $features = $this->variantResolver->resolveFeatures();
         $schemaHints = $this->buildSchemaHints($installed);
+        $aiCapabilities = $this->buildAICapabilities($aiEnabled);
 
         return [
             'stack' => $stack,
@@ -80,6 +82,7 @@ final class StudioContextService
             'variants' => $variants,
             'features' => $features,
             'schema_hints' => $schemaHints,
+            'ai_capabilities' => $aiCapabilities,
         ];
     }
 
@@ -167,6 +170,28 @@ final class StudioContextService
         ];
 
         return $hints;
+    }
+
+    /**
+     * Build AI capabilities information.
+     *
+     * @return array{available: bool, provider: string|null, features: array<string, bool>}
+     */
+    private function buildAICapabilities(bool $aiEnabled): array
+    {
+        return [
+            'available' => $aiEnabled,
+            'provider' => $aiEnabled ? config('architect.ai.provider', 'anthropic') : null,
+            'features' => [
+                'chat' => $aiEnabled,
+                'suggestions' => $aiEnabled,
+                'validation' => $aiEnabled,
+                'code_generation' => $aiEnabled,
+                'package_analysis' => $aiEnabled,
+                'conflict_detection' => $aiEnabled,
+                'boilerplate_generation' => $aiEnabled,
+            ],
+        ];
     }
 
     /**

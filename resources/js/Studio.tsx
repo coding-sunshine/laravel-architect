@@ -212,6 +212,13 @@ export default function ArchitectStudio({
     const [aiError, setAiError] = useState<string | null>(null);
     const [proposedYaml, setProposedYaml] = useState<string | null>(null);
 
+    // AI Assistant Chat state
+    const [aiChatOpen, setAiChatOpen] = useState(false);
+    const [aiChatMessages, setAiChatMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
+    const [aiChatInput, setAiChatInput] = useState('');
+    const [aiChatLoading, setAiChatLoading] = useState(false);
+    const [aiChatSuggestions, setAiChatSuggestions] = useState<string[]>([]);
+
     const [starterConfirmOpen, setStarterConfirmOpen] = useState(false);
     const [pendingStarter, setPendingStarter] = useState<{ name: string; yaml: string } | null>(null);
 
@@ -485,6 +492,57 @@ export default function ArchitectStudio({
         }
     }, [apiFetch, aiDescription]);
 
+    // AI Assistant Chat handlers
+    const fetchChatSuggestions = useCallback(async () => {
+        const { ok, data } = await apiFetch('/architect/api/ai/chat/suggestions');
+        if (ok) {
+            const result = data as { suggestions?: string[] };
+            setAiChatSuggestions(result.suggestions ?? []);
+        }
+    }, [apiFetch]);
+
+    const handleAiChat = useCallback(async (message?: string) => {
+        const msg = message ?? aiChatInput.trim();
+        if (!msg) return;
+        setAiChatInput('');
+        setAiChatMessages((prev) => [...prev, { role: 'user', content: msg }]);
+        setAiChatLoading(true);
+        try {
+            const { ok, data } = await apiFetch('/architect/api/ai/chat', {
+                method: 'POST',
+                body: JSON.stringify({ message: msg, yaml: draftYaml }),
+            });
+            const result = data as { response?: string; suggestions?: string[]; actions?: Array<{ type: string; payload: string }> };
+            if (ok && result.response) {
+                setAiChatMessages((prev) => [...prev, { role: 'assistant', content: result.response ?? '' }]);
+                if (result.suggestions) {
+                    setAiChatSuggestions(result.suggestions);
+                }
+                // Handle actions if any (e.g., apply_yaml)
+                if (result.actions) {
+                    for (const action of result.actions) {
+                        if (action.type === 'apply_yaml' && action.payload) {
+                            setProposedYaml(action.payload);
+                            setAiPanelOpen(true);
+                        }
+                    }
+                }
+            } else {
+                setAiChatMessages((prev) => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' }]);
+            }
+        } catch {
+            setAiChatMessages((prev) => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' }]);
+        } finally {
+            setAiChatLoading(false);
+        }
+    }, [apiFetch, aiChatInput, draftYaml]);
+
+    useEffect(() => {
+        if (aiChatOpen && aiChatSuggestions.length === 0) {
+            fetchChatSuggestions();
+        }
+    }, [aiChatOpen, aiChatSuggestions.length, fetchChatSuggestions]);
+
     const applyProposed = useCallback(
         (action: 'apply' | 'edit' | 'discard') => {
             if (action === 'discard') {
@@ -627,10 +685,14 @@ export default function ArchitectStudio({
                 handleBuild();
                 return;
             }
+            if (e.key === 'a' && !e.metaKey && !e.ctrlKey && ai_enabled) {
+                setAiChatOpen(true);
+                return;
+            }
         };
         window.addEventListener('keydown', onKeyDown);
         return () => window.removeEventListener('keydown', onKeyDown);
-    }, [paletteOpen, handleValidate, handlePlan, handleBuild]);
+    }, [paletteOpen, handleValidate, handlePlan, handleBuild, ai_enabled]);
 
     useEffect(() => {
         if (standalone) {
@@ -982,18 +1044,28 @@ export default function ArchitectStudio({
                             </DropdownMenu>
                         </div>
                         {ai_enabled && (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="hidden md:inline-flex"
-                                onClick={() => {
-                                    setAiError(null);
-                                    setProposedYaml(null);
-                                    setAiPanelOpen(true);
-                                }}
-                            >
-                                Describe with AI
-                            </Button>
+                            <>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="hidden md:inline-flex"
+                                    onClick={() => {
+                                        setAiError(null);
+                                        setProposedYaml(null);
+                                        setAiPanelOpen(true);
+                                    }}
+                                >
+                                    Describe with AI
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="hidden md:inline-flex"
+                                    onClick={() => setAiChatOpen(true)}
+                                >
+                                    AI Assistant
+                                </Button>
+                            </>
                         )}
                         <Button
                             variant="outline"
@@ -1670,6 +1742,108 @@ export default function ArchitectStudio({
                 </SheetContent>
             </Sheet>
 
+            {/* AI Chat Assistant Panel */}
+            <Sheet open={aiChatOpen} onOpenChange={setAiChatOpen}>
+                <SheetContent className="flex flex-col sm:max-w-lg" side="right">
+                    <SheetHeader>
+                        <SheetTitle>AI Assistant</SheetTitle>
+                        <SheetDescription>
+                            Ask questions about your schema, get suggestions, or request code generation.
+                        </SheetDescription>
+                    </SheetHeader>
+                    <div className="flex flex-1 flex-col gap-4 py-4 overflow-hidden">
+                        {/* Chat Messages */}
+                        <div className="flex-1 overflow-y-auto space-y-3 min-h-0">
+                            {aiChatMessages.length === 0 && !aiChatLoading && (
+                                <div className="text-center text-muted-foreground text-sm py-8">
+                                    <p className="mb-4">I can help you with:</p>
+                                    <ul className="text-left space-y-2 text-xs">
+                                        <li>• Designing your database schema</li>
+                                        <li>• Suggesting fields and relationships</li>
+                                        <li>• Recommending packages for features</li>
+                                        <li>• Validating your schema</li>
+                                        <li>• Generating code snippets</li>
+                                    </ul>
+                                </div>
+                            )}
+                            {aiChatMessages.map((msg, idx) => (
+                                <div
+                                    key={idx}
+                                    className={cn(
+                                        "rounded-lg px-3 py-2 text-sm max-w-[85%]",
+                                        msg.role === 'user'
+                                            ? "ml-auto bg-primary text-primary-foreground"
+                                            : "bg-muted"
+                                    )}
+                                >
+                                    <div className="whitespace-pre-wrap">{msg.content}</div>
+                                </div>
+                            ))}
+                            {aiChatLoading && (
+                                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Thinking...
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Quick Suggestions */}
+                        {aiChatSuggestions.length > 0 && !aiChatLoading && (
+                            <div className="flex flex-wrap gap-2">
+                                {aiChatSuggestions.slice(0, 3).map((suggestion, idx) => (
+                                    <Button
+                                        key={idx}
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-xs h-auto py-1.5"
+                                        onClick={() => handleAiChat(suggestion)}
+                                    >
+                                        {suggestion.length > 40 ? suggestion.substring(0, 40) + '...' : suggestion}
+                                    </Button>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Chat Input */}
+                        <div className="flex gap-2">
+                            <Input
+                                placeholder="Ask anything about your schema..."
+                                value={aiChatInput}
+                                onChange={(e) => setAiChatInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        handleAiChat();
+                                    }
+                                }}
+                                disabled={aiChatLoading}
+                            />
+                            <Button
+                                onClick={() => handleAiChat()}
+                                disabled={aiChatLoading || !aiChatInput.trim()}
+                            >
+                                Send
+                            </Button>
+                        </div>
+                    </div>
+                    <SheetFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setAiChatMessages([]);
+                                setAiChatSuggestions([]);
+                            }}
+                            disabled={aiChatMessages.length === 0}
+                        >
+                            Clear Chat
+                        </Button>
+                        <Button variant="outline" onClick={() => setAiChatOpen(false)}>
+                            Close
+                        </Button>
+                    </SheetFooter>
+                </SheetContent>
+            </Sheet>
+
             <Dialog open={starterConfirmOpen} onOpenChange={setStarterConfirmOpen}>
                 <DialogContent>
                     <DialogHeader>
@@ -1844,6 +2018,14 @@ export default function ArchitectStudio({
                                 }}
                             >
                                 Describe with AI
+                            </StudioCommandItem>
+                            <StudioCommandItem
+                                onSelect={() => {
+                                    setAiChatOpen(true);
+                                    setPaletteOpen(false);
+                                }}
+                            >
+                                AI Assistant <span className="ml-auto text-muted-foreground">A</span>
                             </StudioCommandItem>
                         </CommandGroup>
                     )}

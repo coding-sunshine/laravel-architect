@@ -14,6 +14,7 @@ Documentation for the Laravel Architect package: YAML-driven scaffolding with AI
 | [Stacks](stacks.md) | Supported stacks (Inertia React, Inertia Vue, Livewire, Volt, Blade), detection, and override. |
 | [Packages](packages.md) | Detected packages, registry, and how to extend. |
 | [AI and Prism](ai-and-prism.md) | When AI is used, Prism setup, context minimisation, retries and fallback. |
+| [AI Features](ai-features.md) | Advanced AI capabilities: assistant chat, smart suggestions, code generation, conflict detection. |
 | [Visual Designer](visual-designer.md) | Open the Studio, frontend stack (shadcn / Flux / Blade), command–UI parity. |
 | [Templates](templates.md) | Starter drafts (blog, saas, api) and custom starters. |
 | [Troubleshooting](troubleshooting.md) | Common errors and how to fix them. |

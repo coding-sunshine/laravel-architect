@@ -18,8 +18,16 @@ use CodingSunshine\Architect\Console\Commands\ValidateCommand;
 use CodingSunshine\Architect\Console\Commands\WatchCommand;
 use CodingSunshine\Architect\Console\Commands\WhyCommand;
 use CodingSunshine\Architect\Contracts\GeneratorInterface;
+use CodingSunshine\Architect\Http\Controllers\ArchitectAIController;
 use CodingSunshine\Architect\Http\Controllers\ArchitectApiController;
 use CodingSunshine\Architect\Http\Controllers\ArchitectStudioController;
+use CodingSunshine\Architect\Services\AI\AIBoilerplateGenerator;
+use CodingSunshine\Architect\Services\AI\AICodeGenerator;
+use CodingSunshine\Architect\Services\AI\AIConflictDetector;
+use CodingSunshine\Architect\Services\AI\AIPackageAnalyzer;
+use CodingSunshine\Architect\Services\AI\AISchemaSuggestionService;
+use CodingSunshine\Architect\Services\AI\AISchemaValidator;
+use CodingSunshine\Architect\Services\AI\PackageAssistant;
 use CodingSunshine\Architect\Services\BuildOrchestrator;
 use CodingSunshine\Architect\Services\BuildPlanner;
 use CodingSunshine\Architect\Services\ChangeDetector;
@@ -96,6 +104,15 @@ final class ArchitectServiceProvider extends PackageServiceProvider
         $this->app->singleton(GeneratorVariantResolver::class);
         $this->app->singleton(PackageSuggestionService::class);
         $this->app->singleton(PackageValidationService::class);
+
+        // AI-powered services (require Prism)
+        $this->app->singleton(AIPackageAnalyzer::class);
+        $this->app->singleton(AISchemaSuggestionService::class);
+        $this->app->singleton(AICodeGenerator::class);
+        $this->app->singleton(AIConflictDetector::class);
+        $this->app->singleton(AISchemaValidator::class);
+        $this->app->singleton(AIBoilerplateGenerator::class);
+        $this->app->singleton(PackageAssistant::class);
 
         $this->app->singleton(StudioContextService::class);
 
@@ -187,6 +204,21 @@ final class ArchitectServiceProvider extends PackageServiceProvider
             $router->middleware('web')->get($apiPrefix.'/explain', [ArchitectApiController::class, 'explain'])->name('architect.api.explain');
             $router->middleware('web')->get($apiPrefix.'/preview', [ArchitectApiController::class, 'preview'])->name('architect.api.preview');
             $router->middleware('web')->post($apiPrefix.'/analyze', [ArchitectApiController::class, 'analyze'])->name('architect.api.analyze');
+
+            // AI-powered endpoints
+            $aiPrefix = $apiPrefix.'/ai';
+            $router->middleware('web')->post($aiPrefix.'/chat', [ArchitectAIController::class, 'chat'])->name('architect.api.ai.chat');
+            $router->middleware('web')->get($aiPrefix.'/chat/suggestions', [ArchitectAIController::class, 'chatSuggestions'])->name('architect.api.ai.chat.suggestions');
+            $router->middleware('web')->post($aiPrefix.'/analyze-package', [ArchitectAIController::class, 'analyzePackage'])->name('architect.api.ai.analyze-package');
+            $router->middleware('web')->post($aiPrefix.'/suggestions', [ArchitectAIController::class, 'suggestions'])->name('architect.api.ai.suggestions');
+            $router->middleware('web')->post($aiPrefix.'/suggest-fields', [ArchitectAIController::class, 'suggestFields'])->name('architect.api.ai.suggest-fields');
+            $router->middleware('web')->post($aiPrefix.'/validate', [ArchitectAIController::class, 'validateSchema'])->name('architect.api.ai.validate');
+            $router->middleware('web')->post($aiPrefix.'/recommendations', [ArchitectAIController::class, 'recommendations'])->name('architect.api.ai.recommendations');
+            $router->middleware('web')->get($aiPrefix.'/conflicts', [ArchitectAIController::class, 'conflicts'])->name('architect.api.ai.conflicts');
+            $router->middleware('web')->post($aiPrefix.'/check-compatibility', [ArchitectAIController::class, 'checkCompatibility'])->name('architect.api.ai.check-compatibility');
+            $router->middleware('web')->post($aiPrefix.'/generate-code', [ArchitectAIController::class, 'generateCode'])->name('architect.api.ai.generate-code');
+            $router->middleware('web')->post($aiPrefix.'/generate-boilerplate', [ArchitectAIController::class, 'generateBoilerplate'])->name('architect.api.ai.generate-boilerplate');
+            $router->middleware('web')->post($aiPrefix.'/generate-complete', [ArchitectAIController::class, 'generateComplete'])->name('architect.api.ai.generate-complete');
         });
     }
 

@@ -6,6 +6,7 @@ namespace CodingSunshine\Architect\Services\Generators;
 
 use CodingSunshine\Architect\Contracts\GeneratorInterface;
 use CodingSunshine\Architect\Services\GeneratorVariantResolver;
+use CodingSunshine\Architect\Services\PackageDiscovery;
 use CodingSunshine\Architect\Services\StackDetector;
 use CodingSunshine\Architect\Support\BuildResult;
 use CodingSunshine\Architect\Support\Draft;
@@ -18,10 +19,14 @@ final class PageGenerator implements GeneratorInterface
 {
     private const RESOURCE_VIEWS = ['index', 'create', 'show', 'edit'];
 
+    private const POWER_GRID_PACKAGES = ['power-grid/laravel-powergrid', 'power-grid/powergrid'];
+
     public function __construct(
         private readonly StackDetector $stackDetector,
         private readonly GeneratorVariantResolver $variantResolver,
-    ) {}
+        private readonly PackageDiscovery $packageDiscovery,
+    ) {
+    }
 
     public function generate(Draft $draft, string $draftPath): BuildResult
     {
@@ -114,8 +119,8 @@ final class PageGenerator implements GeneratorInterface
 
     private function renderInertiaReact(string $pageKey, string $slug, string $view): string
     {
-        $title = Str::title($view).' '.Str::title(str_replace('-', ' ', $slug));
-        $componentName = Str::studly(str_replace('-', ' ', $slug)).Str::studly($view);
+        $title = Str::title($view) . ' ' . Str::title(str_replace('-', ' ', $slug));
+        $componentName = Str::studly(str_replace('-', ' ', $slug)) . Str::studly($view);
 
         return <<<TSX
 import { Head } from '@inertiajs/react';
@@ -137,8 +142,8 @@ TSX;
 
     private function renderInertiaReactIndexWithTables(string $pageKey, string $slug): string
     {
-        $title = 'Index '.Str::title(str_replace('-', ' ', $slug));
-        $componentName = Str::studly(str_replace('-', ' ', $slug)).'Index';
+        $title = 'Index ' . Str::title(str_replace('-', ' ', $slug));
+        $componentName = Str::studly(str_replace('-', ' ', $slug)) . 'Index';
 
         return <<<TSX
 import { Head } from '@inertiajs/react';
@@ -160,8 +165,8 @@ TSX;
 
     private function renderInertiaVue(string $pageKey, string $slug, string $view): string
     {
-        $title = Str::title($view).' '.Str::title(str_replace('-', ' ', $slug));
-        $componentName = Str::studly(str_replace('-', ' ', $slug)).Str::studly($view);
+        $title = Str::title($view) . ' ' . Str::title(str_replace('-', ' ', $slug));
+        $componentName = Str::studly(str_replace('-', ' ', $slug)) . Str::studly($view);
 
         return <<<VUE
 <template>
@@ -181,7 +186,7 @@ VUE;
 
     private function renderInertiaVueIndexWithTables(string $pageKey, string $slug): string
     {
-        $title = 'Index '.Str::title(str_replace('-', ' ', $slug));
+        $title = 'Index ' . Str::title(str_replace('-', ' ', $slug));
 
         return <<<VUE
 <template>
@@ -220,6 +225,11 @@ VUE;
     private function renderLivewireClass(string $componentName, string $viewName, bool $usePowerGrid = false): string
     {
         if ($usePowerGrid) {
+            $stubHint = $this->powerGridStubPublishHint();
+            $comment = $stubHint !== null
+                ? "/** Power Grid: extend PowerComponents\\LivewirePowerGrid\\PowerGridComponent and implement datasource/columns.\n * {$stubHint}\n */"
+                : '/** Power Grid: extend PowerComponents\LivewirePowerGrid\PowerGridComponent and implement datasource/columns. */';
+
             return <<<PHP
 <?php
 
@@ -229,7 +239,7 @@ namespace App\Livewire;
 
 use Livewire\Component;
 
-/** Power Grid: extend PowerComponents\LivewirePowerGrid\PowerGridComponent and implement datasource/columns. */
+{$comment}
 final class {$componentName} extends Component
 {
     public function render(): string
@@ -263,13 +273,18 @@ PHP;
 
     private function renderLivewireView(string $pageKey, string $slug, string $view, bool $usePowerGrid = false): string
     {
-        $title = Str::title($view).' '.Str::title(str_replace('-', ' ', $slug));
+        $title = Str::title($view) . ' ' . Str::title(str_replace('-', ' ', $slug));
 
         if ($usePowerGrid) {
+            $stubHint = $this->powerGridStubPublishHint();
+            $comment = $stubHint !== null
+                ? "{{-- Power Grid: use <livewire:powergrid.table /> or your Power Grid table component. {$stubHint} --}}"
+                : '{{-- Power Grid: use <livewire:powergrid.table /> or your Power Grid table component --}}';
+
             return <<<BLADE
 <div>
     <h1 class="text-xl font-semibold">{$title}</h1>
-    {{-- Power Grid: use <livewire:powergrid.table /> or your Power Grid table component --}}
+    {$comment}
     <div class="mt-4">Wire your Power Grid table here.</div>
 </div>
 BLADE;
@@ -285,7 +300,7 @@ BLADE;
 
     private function renderVolt(string $pageKey, string $slug, string $view): string
     {
-        $title = Str::title($view).' '.Str::title(str_replace('-', ' ', $slug));
+        $title = Str::title($view) . ' ' . Str::title(str_replace('-', ' ', $slug));
 
         return <<<BLADE
 <?php
@@ -303,9 +318,39 @@ new class extends Component {
 BLADE;
     }
 
+    /**
+     * If Power Grid is installed and provides stubs, return a hint to publish them; otherwise null.
+     */
+    private function powerGridStubPublishHint(): ?string
+    {
+        $installed = $this->packageDiscovery->installed();
+        $hasPowerGrid = false;
+        foreach (self::POWER_GRID_PACKAGES as $pkg) {
+            if (isset($installed[$pkg])) {
+                $hasPowerGrid = true;
+                break;
+            }
+        }
+        if (! $hasPowerGrid) {
+            return null;
+        }
+        $vendorDir = base_path('vendor');
+        $stubPaths = [
+            $vendorDir . '/power-grid/laravel-powergrid/stubs',
+            $vendorDir . '/power-grid/powergrid/stubs',
+        ];
+        foreach ($stubPaths as $path) {
+            if (File::isDirectory($path)) {
+                return 'To use Power Grid\'s official stubs, run: php artisan vendor:publish --tag=powergrid-stubs (see Power Grid docs for the exact tag).';
+            }
+        }
+
+        return null;
+    }
+
     private function renderBlade(string $pageKey, string $slug, string $view): string
     {
-        $title = Str::title($view).' '.Str::title(str_replace('-', ' ', $slug));
+        $title = Str::title($view) . ' ' . Str::title(str_replace('-', ' ', $slug));
 
         return <<<BLADE
 <x-layouts.app :title="'{$title}'">

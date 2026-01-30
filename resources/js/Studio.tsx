@@ -212,6 +212,7 @@ export default function ArchitectStudio({
     const [aiError, setAiError] = useState<string | null>(null);
     const [proposedYaml, setProposedYaml] = useState<string | null>(null);
     const [simpleSummary, setSimpleSummary] = useState<{ models: number; actions: number; pages: number } | null>(null);
+    const [showYamlInSimpleSheet, setShowYamlInSimpleSheet] = useState(false);
 
     // AI Assistant Chat state
     const [aiChatOpen, setAiChatOpen] = useState(false);
@@ -275,6 +276,12 @@ export default function ArchitectStudio({
             return null;
         }
     }, [draftYaml]);
+
+    const wizardModelOptions = useMemo(() => {
+        const fromApp = existing_models.map((m) => m.name);
+        const fromDraft = Object.keys(parsedDraft?.models ?? {});
+        return [...new Set([...fromApp, ...fromDraft])].sort();
+    }, [existing_models, parsedDraft?.models]);
 
     const parseError = useMemo((): string | null => {
         if (!draftYaml.trim()) return null;
@@ -514,6 +521,7 @@ export default function ArchitectStudio({
         if (ok && result.yaml && result.summary) {
             setProposedYaml(result.yaml);
             setSimpleSummary(result.summary);
+            setShowYamlInSimpleSheet(false);
         } else {
             setAiError(result.error ?? 'Failed to generate draft.');
         }
@@ -1731,7 +1739,7 @@ export default function ArchitectStudio({
                             Describe your app or change; AI will propose a draft you can apply or edit.
                         </SheetDescription>
                     </SheetHeader>
-                    <div className="flex flex-1 flex-col gap-4 py-4">
+                    <div className="flex flex-1 flex-col gap-3 py-4 min-h-0">
                         {!proposedYaml ? (
                             <>
                                 <div className="space-y-2">
@@ -1752,45 +1760,66 @@ export default function ArchitectStudio({
                         ) : (
                             <div className="flex flex-1 flex-col gap-2">
                                 {simpleSummary && (
-                                    <p className="text-sm text-muted-foreground">
-                                        {simpleSummary.models} model(s), {simpleSummary.actions} action(s), {simpleSummary.pages} page(s)
-                                    </p>
+                                    <>
+                                        <p className="text-sm text-muted-foreground">
+                                            {simpleSummary.models} model(s), {simpleSummary.actions} action(s), {simpleSummary.pages} page(s)
+                                        </p>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-auto w-fit p-0 text-muted-foreground hover:text-foreground"
+                                            onClick={() => setShowYamlInSimpleSheet((v) => !v)}
+                                        >
+                                            {showYamlInSimpleSheet ? 'Hide YAML' : 'Show YAML'}
+                                        </Button>
+                                    </>
                                 )}
-                                <Label>Proposed draft</Label>
-                                <pre className="max-h-[280px] flex-1 overflow-auto rounded-md border border-sidebar-border bg-muted/50 p-3 text-xs">
-                                    {proposedYaml}
-                                </pre>
+                                {(!simpleSummary || showYamlInSimpleSheet) && (
+                                    <>
+                                        {!simpleSummary && <Label>Proposed draft</Label>}
+                                        <pre className="max-h-[280px] flex-1 overflow-auto rounded-md border border-sidebar-border bg-muted/50 p-3 text-xs">
+                                            {proposedYaml}
+                                        </pre>
+                                    </>
+                                )}
                             </div>
                         )}
                     </div>
-                    <SheetFooter>
+                    <SheetFooter className="flex flex-col gap-3 border-t border-sidebar-border pt-4">
                         {!proposedYaml ? (
                             <>
-                                <Button
-                                    variant="outline"
-                                    onClick={() => {
-                                        setAiPanelOpen(false);
-                                        setAiError(null);
-                                    }}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    onClick={handleSimpleGenerate}
-                                    disabled={aiLoading || !aiDescription.trim()}
-                                >
-                                    {aiLoading ? 'Generating…' : 'Simple'}
-                                </Button>
-                                <Button
-                                    onClick={handleAiSubmit}
-                                    disabled={aiLoading || !aiDescription.trim()}
-                                >
-                                    {aiLoading ? 'Generating…' : 'Generate'}
-                                </Button>
+                                <p className="text-xs text-muted-foreground">
+                                    Summary first shows model/action/page counts, then you can show YAML. Full draft returns the complete YAML in one step.
+                                </p>
+                                <div className="flex flex-row flex-wrap gap-2 justify-end">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => {
+                                            setAiPanelOpen(false);
+                                            setAiError(null);
+                                        }}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        onClick={handleSimpleGenerate}
+                                        disabled={aiLoading || !aiDescription.trim()}
+                                        title="Get a quick summary (counts), then optionally show YAML"
+                                    >
+                                        {aiLoading ? 'Generating…' : 'Summary first'}
+                                    </Button>
+                                    <Button
+                                        onClick={handleAiSubmit}
+                                        disabled={aiLoading || !aiDescription.trim()}
+                                        title="Get the full draft YAML immediately"
+                                    >
+                                        {aiLoading ? 'Generating…' : 'Full draft'}
+                                    </Button>
+                                </div>
                             </>
                         ) : (
-                            <>
+                            <div className="flex flex-row flex-wrap gap-2 justify-end">
                                 <Button variant="outline" onClick={() => applyProposed('discard')}>
                                     Discard
                                 </Button>
@@ -1798,7 +1827,7 @@ export default function ArchitectStudio({
                                     Edit
                                 </Button>
                                 <Button onClick={() => applyProposed('apply')}>Apply</Button>
-                            </>
+                            </div>
                         )}
                     </SheetFooter>
                 </SheetContent>
@@ -1813,13 +1842,13 @@ export default function ArchitectStudio({
                             Ask questions about your schema, get suggestions, or request code generation.
                         </SheetDescription>
                     </SheetHeader>
-                    <div className="flex flex-1 flex-col gap-4 py-4 overflow-hidden">
+                    <div className="flex flex-1 flex-col gap-3 py-4 overflow-hidden min-h-0">
                         {/* Chat Messages */}
                         <div className="flex-1 overflow-y-auto space-y-3 min-h-0">
                             {aiChatMessages.length === 0 && !aiChatLoading && (
-                                <div className="text-center text-muted-foreground text-sm py-8">
-                                    <p className="mb-4">I can help you with:</p>
-                                    <ul className="text-left space-y-2 text-xs">
+                                <div className="text-muted-foreground text-sm py-4 px-1">
+                                    <p className="mb-2 font-medium text-foreground">I can help you with:</p>
+                                    <ul className="space-y-1.5 text-xs">
                                         <li>• Designing your database schema</li>
                                         <li>• Suggesting fields and relationships</li>
                                         <li>• Recommending packages for features</li>
@@ -1851,23 +1880,26 @@ export default function ArchitectStudio({
 
                         {/* Quick Suggestions */}
                         {aiChatSuggestions.length > 0 && !aiChatLoading && (
-                            <div className="flex flex-wrap gap-2">
-                                {aiChatSuggestions.slice(0, 3).map((suggestion, idx) => (
-                                    <Button
-                                        key={idx}
-                                        variant="outline"
-                                        size="sm"
-                                        className="text-xs h-auto py-1.5"
-                                        onClick={() => handleAiChat(suggestion)}
-                                    >
-                                        {suggestion.length > 40 ? suggestion.substring(0, 40) + '...' : suggestion}
-                                    </Button>
-                                ))}
+                            <div className="flex flex-col gap-2 shrink-0">
+                                <p className="text-xs font-medium text-muted-foreground">Try asking:</p>
+                                <div className="flex flex-col gap-2">
+                                    {aiChatSuggestions.slice(0, 3).map((suggestion, idx) => (
+                                        <Button
+                                            key={idx}
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-auto min-h-9 py-2 px-3 text-left text-sm font-normal whitespace-normal"
+                                            onClick={() => handleAiChat(suggestion)}
+                                        >
+                                            {suggestion}
+                                        </Button>
+                                    ))}
+                                </div>
                             </div>
                         )}
 
                         {/* Chat Input */}
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 shrink-0">
                             <Input
                                 placeholder="Ask anything about your schema..."
                                 value={aiChatInput}
@@ -1888,7 +1920,7 @@ export default function ArchitectStudio({
                             </Button>
                         </div>
                     </div>
-                    <SheetFooter>
+                    <SheetFooter className="flex flex-row gap-2 justify-end border-t border-sidebar-border pt-4">
                         <Button
                             variant="outline"
                             onClick={() => {
@@ -2007,22 +2039,36 @@ export default function ArchitectStudio({
                         {wizardOpen === 'addCrud' && (
                             <div className="space-y-2">
                                 <Label>Model name</Label>
-                                <Input
+                                <select
+                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                                     value={(wizardForm.model_name as string) ?? ''}
                                     onChange={(e) => setWizardForm((f) => ({ ...f, model_name: e.target.value }))}
-                                    placeholder="e.g. Post"
-                                />
+                                >
+                                    <option value="">Select model</option>
+                                    {wizardModelOptions.map((name) => (
+                                        <option key={name} value={name}>
+                                            {name}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                         )}
                         {wizardOpen === 'addRelationship' && (
                             <>
                                 <div className="space-y-2">
                                     <Label>From model</Label>
-                                    <Input
+                                    <select
+                                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                                         value={(wizardForm.from_model as string) ?? ''}
                                         onChange={(e) => setWizardForm((f) => ({ ...f, from_model: e.target.value }))}
-                                        placeholder="e.g. Comment"
-                                    />
+                                    >
+                                        <option value="">Select model</option>
+                                        {wizardModelOptions.map((name) => (
+                                            <option key={name} value={name}>
+                                                {name}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Type</Label>
@@ -2039,11 +2085,18 @@ export default function ArchitectStudio({
                                 </div>
                                 <div className="space-y-2">
                                     <Label>To model</Label>
-                                    <Input
+                                    <select
+                                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                                         value={(wizardForm.to_model as string) ?? ''}
                                         onChange={(e) => setWizardForm((f) => ({ ...f, to_model: e.target.value }))}
-                                        placeholder="e.g. Post"
-                                    />
+                                    >
+                                        <option value="">Select model</option>
+                                        {wizardModelOptions.map((name) => (
+                                            <option key={name} value={name}>
+                                                {name}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                             </>
                         )}
@@ -2086,7 +2139,12 @@ export default function ArchitectStudio({
                             Cancel
                         </Button>
                         <Button
-                            disabled={wizardLoading}
+                            disabled={
+                                wizardLoading ||
+                                (wizardOpen === 'addCrud' && !(wizardForm.model_name as string)?.trim()) ||
+                                (wizardOpen === 'addRelationship' &&
+                                    (!(wizardForm.from_model as string)?.trim() || !(wizardForm.to_model as string)?.trim()))
+                            }
                             onClick={async () => {
                                 if (!wizardOpen) return;
                                 const endpoint =
@@ -2172,6 +2230,8 @@ export default function ArchitectStudio({
                                     Start from template: {name}
                                 </StudioCommandItem>
                             ))}
+                    </CommandGroup>
+                    <CommandGroup heading="Import">
                         <StudioCommandItem
                             onSelect={() => {
                                 runImport();
@@ -2258,7 +2318,7 @@ export default function ArchitectStudio({
 
             {/* Features Panel */}
             <Sheet open={featuresPanelOpen} onOpenChange={setFeaturesPanelOpen}>
-                <SheetContent side="right" className="w-[400px] sm:w-[540px]">
+                <SheetContent side="right" className="w-[400px] sm:w-[540px] flex flex-col">
                     <SheetHeader>
                         <SheetTitle>Available Schema Features</SheetTitle>
                         <SheetDescription>
@@ -2266,32 +2326,32 @@ export default function ArchitectStudio({
                             Green features are available, gray features require additional packages.
                         </SheetDescription>
                     </SheetHeader>
-                    <div className="mt-4 space-y-3 overflow-y-auto pr-2" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+                    <div className="mt-4 space-y-4 overflow-y-auto pr-2 flex-1 min-h-0" style={{ maxHeight: 'calc(100vh - 220px)' }}>
                         {schema_hints &&
                             Object.entries(schema_hints).map(([key, hint]) => (
                                 <div
                                     key={key}
                                     className={cn(
-                                        'rounded-lg border p-3',
+                                        'rounded-lg border p-4',
                                         hint.available
                                             ? 'border-green-500/30 bg-green-500/5'
                                             : 'border-muted bg-muted/30 opacity-60'
                                     )}
                                 >
-                                    <div className="flex items-center justify-between">
-                                        <code className="font-mono text-sm font-medium">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <code className="font-mono text-sm font-medium shrink-0">
                                             {hint.schema_key}: true
                                         </code>
-                                        <Badge variant={hint.available ? 'default' : 'secondary'}>
+                                        <Badge variant={hint.available ? 'default' : 'secondary'} className="shrink-0">
                                             {hint.available ? 'Available' : 'Not installed'}
                                         </Badge>
                                     </div>
-                                    <p className="mt-1 text-sm text-muted-foreground">
+                                    <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
                                         {hint.description}
                                     </p>
-                                    <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                                    <div className="mt-2.5 flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
                                         <span>Requires:</span>
-                                        <code className="rounded bg-muted px-1 py-0.5 font-mono">
+                                        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
                                             {hint.requires_package}
                                         </code>
                                     </div>
@@ -2299,37 +2359,37 @@ export default function ArchitectStudio({
                             ))}
                     </div>
                     {variants && (
-                        <div className="mt-6 border-t pt-4">
-                            <h4 className="mb-3 font-medium">Generator Variants</h4>
-                            <div className="grid grid-cols-2 gap-2 text-sm">
-                                <div className="flex justify-between rounded bg-muted/50 px-2 py-1">
-                                    <span className="text-muted-foreground">Stack</span>
-                                    <span className="font-mono">{variants.stack}</span>
+                        <div className="mt-6 pt-4 border-t border-sidebar-border shrink-0">
+                            <h4 className="mb-3 font-medium text-sm">Generator Variants</h4>
+                            <div className="grid grid-cols-2 gap-3 text-sm">
+                                <div className="flex justify-between items-center rounded-md bg-muted/50 px-3 py-2 gap-2">
+                                    <span className="text-muted-foreground shrink-0">Stack</span>
+                                    <span className="font-mono text-right truncate">{variants.stack}</span>
                                 </div>
-                                <div className="flex justify-between rounded bg-muted/50 px-2 py-1">
-                                    <span className="text-muted-foreground">API Auth</span>
-                                    <span className="font-mono">{variants.api_auth}</span>
+                                <div className="flex justify-between items-center rounded-md bg-muted/50 px-3 py-2 gap-2">
+                                    <span className="text-muted-foreground shrink-0">API Auth</span>
+                                    <span className="font-mono text-right truncate">{variants.api_auth}</span>
                                 </div>
-                                <div className="flex justify-between rounded bg-muted/50 px-2 py-1">
-                                    <span className="text-muted-foreground">Tests</span>
-                                    <span className="font-mono">{variants.test_framework}</span>
+                                <div className="flex justify-between items-center rounded-md bg-muted/50 px-3 py-2 gap-2">
+                                    <span className="text-muted-foreground shrink-0">Tests</span>
+                                    <span className="font-mono text-right truncate">{variants.test_framework}</span>
                                 </div>
-                                <div className="flex justify-between rounded bg-muted/50 px-2 py-1">
-                                    <span className="text-muted-foreground">Admin</span>
-                                    <span className="font-mono">{variants.admin_panel}</span>
+                                <div className="flex justify-between items-center rounded-md bg-muted/50 px-3 py-2 gap-2">
+                                    <span className="text-muted-foreground shrink-0">Admin</span>
+                                    <span className="font-mono text-right truncate">{variants.admin_panel}</span>
                                 </div>
-                                <div className="flex justify-between rounded bg-muted/50 px-2 py-1">
-                                    <span className="text-muted-foreground">API Docs</span>
-                                    <span className="font-mono">{variants.api_docs}</span>
+                                <div className="flex justify-between items-center rounded-md bg-muted/50 px-3 py-2 gap-2">
+                                    <span className="text-muted-foreground shrink-0">API Docs</span>
+                                    <span className="font-mono text-right truncate">{variants.api_docs}</span>
                                 </div>
-                                <div className="flex justify-between rounded bg-muted/50 px-2 py-1">
-                                    <span className="text-muted-foreground">Broadcasting</span>
-                                    <span className="font-mono">{variants.broadcasting}</span>
+                                <div className="flex justify-between items-center rounded-md bg-muted/50 px-3 py-2 gap-2">
+                                    <span className="text-muted-foreground shrink-0">Broadcasting</span>
+                                    <span className="font-mono text-right truncate">{variants.broadcasting}</span>
                                 </div>
                             </div>
                         </div>
                     )}
-                    <SheetFooter className="mt-6">
+                    <SheetFooter className="flex flex-row justify-end border-t border-sidebar-border pt-4 mt-4 shrink-0">
                         <Button variant="outline" onClick={() => setFeaturesPanelOpen(false)}>
                             Close
                         </Button>

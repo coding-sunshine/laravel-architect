@@ -12,7 +12,8 @@ use Symfony\Component\Yaml\Yaml;
 final class DraftParser
 {
     public function __construct(
-        private readonly SchemaValidator $validator
+        private readonly SchemaValidator $validator,
+        private readonly DraftNormalizer $normalizer,
     ) {}
 
     public function parse(string $path): Draft
@@ -36,7 +37,7 @@ final class DraftParser
         try {
             $data = Yaml::parse($content);
         } catch (ParseException $e) {
-            throw new \InvalidArgumentException('Invalid YAML: '.$e->getMessage());
+            throw new \InvalidArgumentException('Invalid YAML: ' . $e->getMessage());
         }
 
         if (! is_array($data)) {
@@ -45,7 +46,7 @@ final class DraftParser
 
         $errors = $this->validator->validate($data);
         if ($errors !== []) {
-            throw new \InvalidArgumentException("Draft validation failed:\n".implode("\n", $errors));
+            throw new \InvalidArgumentException("Draft validation failed:\n" . implode("\n", $errors));
         }
 
         return $this->hydrate($data);
@@ -65,6 +66,7 @@ final class DraftParser
         if (! is_array($models)) {
             $models = [];
         }
+        $models = $this->normalizer->normalizeModels($models);
         if (! is_array($actions)) {
             $actions = [];
         }

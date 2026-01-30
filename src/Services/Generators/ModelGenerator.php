@@ -64,6 +64,7 @@ final class ModelGenerator implements GeneratorInterface
     public function generate(Draft $draft, string $draftPath): BuildResult
     {
         $generated = [];
+        $backup = [];
         $basePath = app()->path('Models');
 
         foreach ($draft->modelNames() as $modelName) {
@@ -75,6 +76,9 @@ final class ModelGenerator implements GeneratorInterface
             $content = $this->renderModel($modelName, $modelDef);
             $path = "{$basePath}/{$modelName}.php";
 
+            if (File::exists($path)) {
+                $backup[$path] = File::get($path);
+            }
             File::ensureDirectoryExists(dirname($path));
             File::put($path, $content);
 
@@ -85,7 +89,7 @@ final class ModelGenerator implements GeneratorInterface
             ];
         }
 
-        return new BuildResult(generated: $generated);
+        return new BuildResult(generated: $generated, backup: $backup);
     }
 
     public function supports(Draft $draft): bool
@@ -114,7 +118,7 @@ final class ModelGenerator implements GeneratorInterface
 
         $traitsBlock = $this->formatTraits($traits, $usesSoftDeletes);
         if ($traitsBlock !== '') {
-            $traitsBlock = $traitsBlock."\n\n    ";
+            $traitsBlock = $traitsBlock . "\n\n    ";
         }
 
         $extendsBlock = $this->formatExtends($interfaces);
@@ -207,9 +211,9 @@ final class ModelGenerator implements GeneratorInterface
             return '';
         }
 
-        $interfaceNames = array_map(fn (string $fqcn) => '\\'.$fqcn, $interfaces);
+        $interfaceNames = array_map(fn (string $fqcn) => '\\' . $fqcn, $interfaces);
 
-        return ' implements '.implode(', ', $interfaceNames);
+        return ' implements ' . implode(', ', $interfaceNames);
     }
 
     /**
@@ -246,7 +250,7 @@ final class ModelGenerator implements GeneratorInterface
             return '';
         }
 
-        return "\n\n".implode("\n\n", $methods);
+        return "\n\n" . implode("\n\n", $methods);
     }
 
     private function renderMediaConversionsMethod(): string
@@ -402,7 +406,7 @@ PHP;
             return '[]';
         }
 
-        return "[\n            '".implode("',\n            '", $fillable)."',\n        ]";
+        return "[\n            '" . implode("',\n            '", $fillable) . "',\n        ]";
     }
 
     /**
@@ -411,7 +415,7 @@ PHP;
     private function formatCasts(array $casts): string
     {
         if ($casts === []) {
-            return 'return [];';
+            return "return [];";
         }
 
         $lines = [];
@@ -419,7 +423,7 @@ PHP;
             $lines[] = "            '{$key}' => '{$value}',";
         }
 
-        return "return [\n".implode("\n", $lines)."\n        ];";
+        return "return [\n" . implode("\n", $lines) . "\n        ];";
     }
 
     /**
@@ -436,7 +440,7 @@ PHP;
             return '';
         }
 
-        return 'use '.implode(";\n    use ", $all).';';
+        return 'use ' . implode(";\n    use ", $all) . ';';
     }
 
     /**
@@ -479,7 +483,7 @@ PHP;
             return $custom;
         }
 
-        $pkg = dirname(__DIR__, 2).'/stubs/'.$name;
+        $pkg = dirname(__DIR__, 2) . '/stubs/' . $name;
 
         return file_exists($pkg) ? $pkg : null;
     }

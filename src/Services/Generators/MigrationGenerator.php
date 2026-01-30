@@ -22,6 +22,7 @@ final class MigrationGenerator implements GeneratorInterface
     public function generate(Draft $draft, string $draftPath): BuildResult
     {
         $generated = [];
+        $backup = [];
         $basePath = database_path('migrations');
 
         foreach ($draft->modelNames() as $modelName) {
@@ -37,10 +38,13 @@ final class MigrationGenerator implements GeneratorInterface
             if ($existingPath !== null && File::exists($existingPath)) {
                 $path = $existingPath;
             } else {
-                $filename = date('Y_m_d_His').'_create_'.$tableName.'_table.php';
+                $filename = date('Y_m_d_His') . '_create_' . $tableName . '_table.php';
                 $path = "{$basePath}/{$filename}";
             }
 
+            if (File::exists($path)) {
+                $backup[$path] = File::get($path);
+            }
             File::ensureDirectoryExists($basePath);
             File::put($path, $content);
 
@@ -52,7 +56,7 @@ final class MigrationGenerator implements GeneratorInterface
             ];
         }
 
-        return new BuildResult(generated: $generated);
+        return new BuildResult(generated: $generated, backup: $backup);
     }
 
     public function supports(Draft $draft): bool
@@ -114,7 +118,7 @@ PHP;
 
             $line = $this->columnDefinitionToMigration($columnName, $definition);
             if ($line !== '') {
-                $lines[] = '            '.$line;
+                $lines[] = '            ' . $line;
             }
         }
 
@@ -174,7 +178,7 @@ PHP;
                 $php = "\$table->decimal('{$columnName}', 10, 2)";
                 if ($arg !== null && str_contains($arg, ',')) {
                     [$p, $s] = explode(',', $arg, 2);
-                    $php = "\$table->decimal('{$columnName}', ".(int) trim($p).', '.(int) trim($s).')';
+                    $php = "\$table->decimal('{$columnName}', " . (int) trim($p) . ', ' . (int) trim($s) . ')';
                 }
                 break;
             case 'boolean':
@@ -207,6 +211,6 @@ PHP;
             $php .= '->index()';
         }
 
-        return $php.';';
+        return $php . ';';
     }
 }

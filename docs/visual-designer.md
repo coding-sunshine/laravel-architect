@@ -60,18 +60,19 @@ Allowed values: `auto`, `inertia-react`, `livewire-flux`, `livewire-flux-pro`, `
 
 Every CLI command has (or will have) an equivalent action in the Studio:
 
-| Command / capability           | UI equivalent                                      |
-|--------------------------------|----------------------------------------------------|
-| `architect:draft` (NL → YAML)  | "Generate from description" + AI; result in editor |
-| `architect:validate`           | Live validation panel; errors inline               |
-| `architect:plan`               | "What will be generated" panel or modal            |
-| `architect:build`              | "Save and build" / "Build" button                  |
-| `architect:status`             | "Generated files" / "State" panel                   |
-| `architect:packages`           | "Detected packages" panel                          |
-| `architect:import`             | "Import from codebase" button                      |
-| `architect:explain` (planned)  | "Explain this draft" button                        |
-| `architect:fix` (planned)     | "Fix with AI" when errors exist                    |
-| `architect:starter` (planned)  | "Templates" dropdown or page                      |
+| Command / capability           | UI equivalent                                                       |
+|--------------------------------|---------------------------------------------------------------------|
+| `architect:draft` (NL → YAML)  | "Generate from description" + AI; Summary first or Full draft; Expand to full draft after summary |
+| `architect:validate`           | Live validation panel; errors inline                               |
+| `architect:plan`               | "What will be generated" panel with steps and path hints           |
+| `architect:build`              | "Save and build" / "Build" button                                  |
+| Revert last build              | "Revert last build" in command palette (restores backed-up files)   |
+| `architect:status`             | "Generated files" / "State" panel                                 |
+| `architect:packages`           | "Detected packages" panel                                         |
+| `architect:import`             | "Import from codebase" button                                     |
+| `architect:explain` (planned)  | "Explain this draft" button                                       |
+| `architect:fix` (planned)     | "Fix with AI" when errors exist                                    |
+| `architect:starter` (planned)  | "Templates" dropdown or page                                     |
 
 Full parity is implemented in the Inertia/shadcn and Livewire/Flux Studio views when those drivers are available. The Blade fallback currently shows a command list and links to the CLI and documentation.
 

@@ -61,6 +61,8 @@ Generate a draft from a description and return a **summary** (model/action/page 
 
 **Errors:** `422` if `description` is missing or empty; `500` on generation failure.
 
+**One-shot flow:** In the Studio, after using **Summary first** (this endpoint), you can click **Expand to full draft** to call `POST /architect/api/draft-from-ai` with the same description and receive the full YAML in one step (no summary). That replaces the proposed draft with the complete schema.
+
 **Example**
 
 ```json
@@ -69,6 +71,60 @@ Generate a draft from a description and return a **summary** (model/action/page 
 
 // Response
 { "summary": { "models": 2, "actions": 6, "pages": 2 }, "yaml": "..." }
+```
+
+---
+
+## Plan
+
+### POST `/architect/api/plan`
+
+Compute the build plan for the current draft file (no body). Returns a sequence of steps (artisan commands and generators) with optional path hints showing where files will be created or modified.
+
+**Request:** No body. Uses the draft file from `config('architect.draft_path')`.
+
+**Response (200)**
+
+| Field   | Type   | Description |
+|---------|--------|--------------|
+| `steps` | array  | List of step objects (see below). |
+| `summary` | object | `{ models: number, actions: number, pages: number }`. |
+
+Each step in `steps` has:
+
+| Field         | Type   | Description |
+|---------------|--------|-------------|
+| `type`        | string | `artisan` or `generate`. |
+| `name`        | string | Step name (e.g. `model:Post`, `patch_model:Post`). |
+| `description` | string | Human-readable description. |
+| `command`     | string | (optional) Artisan command when `type === 'artisan'`. |
+| `generator`   | string | (optional) Generator name when `type === 'generate'`. |
+| `path_hint`   | string | (optional) Path or glob where output will go (e.g. `app/Models/Post.php`, `database/migrations/*_create_posts_table.php`). |
+
+**Errors:** `404` if draft file not found; `422` if draft is invalid (with `error` message).
+
+---
+
+## Revert last build
+
+### POST `/architect/api/revert`
+
+Restore files that were overwritten by the last successful build. Uses a backup stored in state when the build ran. After reverting, the backup is cleared.
+
+**Request:** No body.
+
+**Response (200)**
+
+| Field      | Type     | Description |
+|------------|----------|-------------|
+| `success`  | boolean  | `true` if all backed-up files were restored. |
+| `restored` | string[] | Paths that were restored. |
+| `errors`   | string[] | Error messages if any path could not be restored. |
+
+**Example**
+
+```json
+{ "success": true, "restored": ["app/Models/Post.php", "database/migrations/2024_01_01_000000_create_posts_table.php"], "errors": [] }
 ```
 
 ---
@@ -176,9 +232,12 @@ Add a page (and route) to the draft.
 
 | Endpoint              | Method | Description |
 |-----------------------|--------|-------------|
-| `GET /architect/api/context` | GET    | Full Studio context (stack, packages, existing_models, app_model, fingerprint, etc.). |
-| `GET /architect/api/draft`  | GET    | Read current draft file; returns `{ yaml, exists }`. |
-| `PUT /architect/api/draft`  | PUT    | Write draft file; body `{ yaml }` or raw body. Returns `{ valid, saved }`. |
-| `POST /architect/api/import`| POST   | Import from codebase; body optional `{ models?: string[], merge_schema_columns?: boolean }`. Returns draft object (models, actions, pages). |
+| `GET /architect/api/context`  | GET    | Full Studio context (stack, packages, existing_models, app_model, fingerprint, etc.). |
+| `GET /architect/api/draft`    | GET    | Read current draft file; returns `{ yaml, exists }`. |
+| `PUT /architect/api/draft`    | PUT    | Write draft file; body `{ yaml }` or raw body. Returns `{ valid, saved }`. |
+| `POST /architect/api/plan`    | POST   | Build plan for current draft; returns `{ steps, summary }` with `path_hint` per step. |
+| `POST /architect/api/build`   | POST   | Run build; body optional `{ only?: string[], force?: boolean }`. Returns `{ success, generated, skipped, warnings, errors }`. |
+| `POST /architect/api/revert`  | POST   | Revert last build by restoring backed-up file contents. Returns `{ success, restored, errors }`. |
+| `POST /architect/api/import`  | POST   | Import from codebase; body optional `{ models?: string[], merge_schema_columns?: boolean }`. Returns draft object (models, actions, pages). |
 
 For AI-specific endpoints (chat, suggestions, validate, generate-code, etc.), see [AI features](ai-features.md).

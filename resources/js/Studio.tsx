@@ -190,7 +190,7 @@ export default function ArchitectStudio({
         errors: string[];
     } | null>(null);
     const [planResult, setPlanResult] = useState<{
-        steps: Array<{ type: string; name: string; description: string }>;
+        steps: Array<{ type: string; name: string; description: string; path_hint?: string }>;
         summary: { models: number; actions: number; pages: number };
     } | null>(null);
     const [buildResult, setBuildResult] = useState<{
@@ -434,7 +434,7 @@ export default function ArchitectStudio({
                 body: JSON.stringify({}),
             });
             const result = data as {
-                steps?: Array<{ type: string; name: string; description: string }>;
+                steps?: Array<{ type: string; name: string; description: string; path_hint?: string }>;
                 summary?: { models: number; actions: number; pages: number };
                 error?: string;
             };
@@ -485,6 +485,32 @@ export default function ArchitectStudio({
         }
     }, [apiFetch]);
 
+    const handleRevert = useCallback(async () => {
+        setBuildResult(null);
+        setActiveResultTab('build');
+        setResultPanelOpen(true);
+        setIsBuilding(true);
+        try {
+            const { ok, data } = await apiFetch('/architect/api/revert', {
+                method: 'POST',
+                body: JSON.stringify({}),
+            });
+            const result = data as {
+                success?: boolean;
+                restored?: string[];
+                errors?: string[];
+            };
+            setBuildResult({
+                success: result.success ?? false,
+                generated: result.restored ?? [],
+                errors: result.errors ?? [],
+                warnings: result.success ? ['Last build reverted.'] : [],
+            });
+        } finally {
+            setIsBuilding(false);
+        }
+    }, [apiFetch]);
+
     const handleAiSubmit = useCallback(async () => {
         const desc = aiDescription.trim();
         if (!desc) return;
@@ -526,6 +552,26 @@ export default function ArchitectStudio({
             setAiError(result.error ?? 'Failed to generate draft.');
         }
     }, [apiFetch, aiDescription]);
+
+    const handleExpandToFullDraft = useCallback(async () => {
+        const desc = aiDescription.trim();
+        if (!desc || !proposedYaml) return;
+        setAiLoading(true);
+        setAiError(null);
+        const { ok, data } = await apiFetch('/architect/api/draft-from-ai', {
+            method: 'POST',
+            body: JSON.stringify({ description: desc }),
+        });
+        setAiLoading(false);
+        const result = data as { yaml?: string; error?: string };
+        if (ok && result.yaml) {
+            setProposedYaml(result.yaml);
+            setSimpleSummary(null);
+            setShowYamlInSimpleSheet(true);
+        } else {
+            setAiError(result.error ?? 'Failed to expand to full draft.');
+        }
+    }, [apiFetch, aiDescription, proposedYaml]);
 
     // AI Assistant Chat handlers
     const fetchChatSuggestions = useCallback(async () => {
@@ -1656,7 +1702,14 @@ export default function ArchitectStudio({
                                             </p>
                                             <ul className="list-inside list-disc text-muted-foreground">
                                                 {planResult.steps.slice(0, 10).map((s, i) => (
-                                                    <li key={i}>{s.description}</li>
+                                                    <li key={i}>
+                                                        {s.description}
+                                                        {s.path_hint && (
+                                                            <span className="block pl-4 text-xs font-mono opacity-80">
+                                                                {s.path_hint}
+                                                            </span>
+                                                        )}
+                                                    </li>
                                                 ))}
                                                 {planResult.steps.length > 10 && (
                                                     <li>+{planResult.steps.length - 10} more</li>
@@ -1823,6 +1876,15 @@ export default function ArchitectStudio({
                                 <Button variant="outline" onClick={() => applyProposed('discard')}>
                                     Discard
                                 </Button>
+                                {simpleSummary && (
+                                    <Button
+                                        variant="outline"
+                                        onClick={handleExpandToFullDraft}
+                                        disabled={aiLoading}
+                                    >
+                                        {aiLoading ? 'Expanding…' : 'Expand to full draft'}
+                                    </Button>
+                                )}
                                 <Button variant="outline" onClick={() => applyProposed('edit')}>
                                     Edit
                                 </Button>
@@ -2215,6 +2277,14 @@ export default function ArchitectStudio({
                             disabled={!draftYaml.trim()}
                         >
                             Generate Code <span className="ml-auto text-muted-foreground">B</span>
+                        </StudioCommandItem>
+                        <StudioCommandItem
+                            onSelect={() => {
+                                handleRevert();
+                                setPaletteOpen(false);
+                            }}
+                        >
+                            Revert last build
                         </StudioCommandItem>
                     </CommandGroup>
                     <CommandGroup heading="Templates">

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace CodingSunshine\Architect\Services;
 
+use CodingSunshine\Architect\Support\HashComputer;
+use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Support\Facades\File;
 
 final class StateManager
@@ -78,6 +80,35 @@ final class StateManager
             'lastBuilt' => now()->toIso8601String(),
         ];
         $state['generated'] = array_merge($state['generated'] ?? [], $generated);
+        $this->save($state);
+    }
+
+    /**
+     * Save backup of file contents before overwrite (for revert last build).
+     *
+     * @param  array<string, string>  $backup  path => content
+     */
+    public function saveLastBuildBackup(array $backup): void
+    {
+        $state = $this->load();
+        $state['last_build_backup'] = $backup;
+        $this->save($state);
+    }
+
+    /**
+     * @return array<string, string> path => content
+     */
+    public function getLastBuildBackup(): array
+    {
+        $state = $this->load();
+
+        return $state['last_build_backup'] ?? [];
+    }
+
+    public function clearLastBuildBackup(): void
+    {
+        $state = $this->load();
+        unset($state['last_build_backup']);
         $this->save($state);
     }
 

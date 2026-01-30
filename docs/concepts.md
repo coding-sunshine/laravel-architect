@@ -56,7 +56,7 @@ Architect runs a set of **generators** during build. Each generator is responsib
 | TypeScript  | `models.*`            | `resources/js/types/architect.d.ts` |
 | Test        | `models.*` / actions  | `tests/Feature/Controllers/*Test.php` |
 
-Not all generators run for every draft; for example, the seeder generator runs only for models that have a `seeder` block. The plan command (`architect:plan`) shows what would be generated without writing files.
+Not all generators run for every draft; for example, the seeder generator runs only for models that have a `seeder` block. The plan command (`architect:plan`) shows what would be generated without writing files; each step includes an optional path hint indicating where the artifact will be created or modified. After a successful build, you can revert the last build to restore the previous contents of overwritten files (see Studio API or command palette).
 
 ## Change detection
 

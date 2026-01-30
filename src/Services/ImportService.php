@@ -11,6 +11,7 @@ final class ImportService
 {
     public function __construct(
         private readonly SchemaDiscovery $schemaDiscovery,
+        private readonly ColumnTypeInferrer $columnTypeInferrer,
     ) {}
 
     /**
@@ -60,7 +61,7 @@ final class ImportService
                 $schemaCols = $this->schemaDiscovery->getColumnListing($table);
                 foreach ($schemaCols as $col) {
                     if (! isset($models[$name][$col])) {
-                        $models[$name][$col] = 'string';
+                        $models[$name][$col] = $this->columnTypeInferrer->inferFromColumnName($col);
                     }
                 }
             }

@@ -54,7 +54,7 @@ php artisan architect:validate /path/to/draft.yaml
 
 ## architect:plan
 
-**Purpose:** Show what would be generated (dry run) without writing files. Displays counts of models, actions, and pages.
+**Purpose:** Show what would be generated (dry run) without writing files. Displays counts of models, actions, and pages, and a sequence of steps with path hints indicating where each artifact will be created or modified.
 
 **Signature:**
 

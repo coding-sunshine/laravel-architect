@@ -11,6 +11,7 @@ final class BuildResult
      * @param  array<string>  $skipped
      * @param  array<string>  $warnings
      * @param  array<string>  $errors
+     * @param  array<string, string>  $backup  path => content (for revert)
      */
     public function __construct(
         public readonly array $generated = [],
@@ -18,6 +19,7 @@ final class BuildResult
         public readonly array $warnings = [],
         public readonly array $errors = [],
         public readonly bool $success = true,
+        public readonly array $backup = [],
     ) {}
 
     public static function noChanges(): self

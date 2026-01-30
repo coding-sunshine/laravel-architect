@@ -153,6 +153,13 @@ final class ArchitectApiController
         ]);
     }
 
+    public function revert(BuildOrchestrator $orchestrator): JsonResponse
+    {
+        $result = $orchestrator->revert();
+
+        return response()->json($result);
+    }
+
     public function draftFromAi(Request $request, DraftGenerator $generator, AppModelService $appModel): JsonResponse
     {
         $description = $request->input('description');

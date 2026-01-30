@@ -11,9 +11,9 @@ use CodingSunshine\Architect\Services\BuildPlanner;
 use CodingSunshine\Architect\Services\DraftGenerator;
 use CodingSunshine\Architect\Services\DraftParser;
 use CodingSunshine\Architect\Services\ImportService;
-use CodingSunshine\Architect\Services\SchemaDiscovery;
 use CodingSunshine\Architect\Services\PackageSuggestionService;
 use CodingSunshine\Architect\Services\PackageValidationService;
+use CodingSunshine\Architect\Services\SchemaDiscovery;
 use CodingSunshine\Architect\Services\StateManager;
 use CodingSunshine\Architect\Services\StudioContextService;
 use Illuminate\Http\JsonResponse;
@@ -55,7 +55,7 @@ final class ArchitectApiController
         try {
             $data = Yaml::parse($content);
         } catch (\Throwable $e) {
-            return response()->json(['valid' => false, 'errors' => ['Invalid YAML: ' . $e->getMessage()]], 422);
+            return response()->json(['valid' => false, 'errors' => ['Invalid YAML: '.$e->getMessage()]], 422);
         }
 
         if (! is_array($data)) {
@@ -81,7 +81,7 @@ final class ArchitectApiController
             try {
                 $data = Yaml::parse($yaml);
             } catch (\Throwable $e) {
-                return response()->json(['valid' => false, 'errors' => ['Invalid YAML: ' . $e->getMessage()]]);
+                return response()->json(['valid' => false, 'errors' => ['Invalid YAML: '.$e->getMessage()]]);
             }
 
             if (! is_array($data)) {
@@ -231,7 +231,7 @@ final class ArchitectApiController
     public function getStarter(string $name): JsonResponse
     {
         $packageRoot = dirname(__DIR__, 2);
-        $path = $packageRoot . '/resources/starters/' . $name . '.yaml';
+        $path = $packageRoot.'/resources/starters/'.$name.'.yaml';
 
         if (! File::exists($path)) {
             return response()->json(['error' => "Starter '{$name}' not found."], 404);
@@ -305,6 +305,7 @@ final class ArchitectApiController
             $def = $draft->getModel($name);
             if ($def) {
                 $gen = app(\CodingSunshine\Architect\Services\Generators\ModelGenerator::class);
+
                 return response()->json(['code' => $gen->renderModel($name, $def)]);
             }
         }
@@ -313,6 +314,7 @@ final class ArchitectApiController
             $def = $draft->actions[$name] ?? null;
             if ($def) {
                 $gen = app(\CodingSunshine\Architect\Services\Generators\ActionGenerator::class);
+
                 return response()->json(['code' => $gen->renderAction($name, $def)]);
             }
         }
@@ -342,7 +344,7 @@ final class ArchitectApiController
             try {
                 $data = Yaml::parse($yaml);
             } catch (\Throwable $e) {
-                return response()->json(['error' => 'Invalid YAML: ' . $e->getMessage()], 422);
+                return response()->json(['error' => 'Invalid YAML: '.$e->getMessage()], 422);
             }
 
             if (! is_array($data)) {
@@ -478,7 +480,7 @@ final class ArchitectApiController
         $to = Str::studly(trim($to));
         $allowed = ['belongsTo', 'hasMany', 'hasOne', 'belongsToMany'];
         if (! in_array($type, $allowed, true)) {
-            return response()->json(['error' => 'type must be one of: ' . implode(', ', $allowed)], 422);
+            return response()->json(['error' => 'type must be one of: '.implode(', ', $allowed)], 422);
         }
         $current = $this->getCurrentDraftArray($request, $parser);
         $current['models'] = $current['models'] ?? [];
@@ -491,7 +493,7 @@ final class ArchitectApiController
         $current['models'][$from]['relationships'] = $current['models'][$from]['relationships'] ?? [];
         $rel = $current['models'][$from]['relationships'];
         $existing = $rel[$type] ?? '';
-        $current['models'][$from]['relationships'][$type] = $existing === '' ? $to : $existing . ', ' . $to;
+        $current['models'][$from]['relationships'][$type] = $existing === '' ? $to : $existing.', '.$to;
         $errors = $validator->validate($current);
         if ($errors !== []) {
             return response()->json(['error' => 'Validation failed.', 'errors' => $errors], 422);
@@ -546,6 +548,7 @@ final class ArchitectApiController
         if (is_string($yaml) && trim($yaml) !== '') {
             try {
                 $data = Yaml::parse($yaml);
+
                 return is_array($data) ? $data : ['models' => [], 'actions' => [], 'pages' => [], 'routes' => [], 'schema_version' => '1.0'];
             } catch (\Throwable) {
                 return ['models' => [], 'actions' => [], 'pages' => [], 'routes' => [], 'schema_version' => '1.0'];

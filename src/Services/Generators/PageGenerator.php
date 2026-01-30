@@ -25,8 +25,7 @@ final class PageGenerator implements GeneratorInterface
         private readonly StackDetector $stackDetector,
         private readonly GeneratorVariantResolver $variantResolver,
         private readonly PackageDiscovery $packageDiscovery,
-    ) {
-    }
+    ) {}
 
     public function generate(Draft $draft, string $draftPath): BuildResult
     {
@@ -119,8 +118,8 @@ final class PageGenerator implements GeneratorInterface
 
     private function renderInertiaReact(string $pageKey, string $slug, string $view): string
     {
-        $title = Str::title($view) . ' ' . Str::title(str_replace('-', ' ', $slug));
-        $componentName = Str::studly(str_replace('-', ' ', $slug)) . Str::studly($view);
+        $title = Str::title($view).' '.Str::title(str_replace('-', ' ', $slug));
+        $componentName = Str::studly(str_replace('-', ' ', $slug)).Str::studly($view);
 
         return <<<TSX
 import { Head } from '@inertiajs/react';
@@ -142,8 +141,8 @@ TSX;
 
     private function renderInertiaReactIndexWithTables(string $pageKey, string $slug): string
     {
-        $title = 'Index ' . Str::title(str_replace('-', ' ', $slug));
-        $componentName = Str::studly(str_replace('-', ' ', $slug)) . 'Index';
+        $title = 'Index '.Str::title(str_replace('-', ' ', $slug));
+        $componentName = Str::studly(str_replace('-', ' ', $slug)).'Index';
 
         return <<<TSX
 import { Head } from '@inertiajs/react';
@@ -165,8 +164,8 @@ TSX;
 
     private function renderInertiaVue(string $pageKey, string $slug, string $view): string
     {
-        $title = Str::title($view) . ' ' . Str::title(str_replace('-', ' ', $slug));
-        $componentName = Str::studly(str_replace('-', ' ', $slug)) . Str::studly($view);
+        $title = Str::title($view).' '.Str::title(str_replace('-', ' ', $slug));
+        $componentName = Str::studly(str_replace('-', ' ', $slug)).Str::studly($view);
 
         return <<<VUE
 <template>
@@ -186,7 +185,7 @@ VUE;
 
     private function renderInertiaVueIndexWithTables(string $pageKey, string $slug): string
     {
-        $title = 'Index ' . Str::title(str_replace('-', ' ', $slug));
+        $title = 'Index '.Str::title(str_replace('-', ' ', $slug));
 
         return <<<VUE
 <template>
@@ -273,7 +272,7 @@ PHP;
 
     private function renderLivewireView(string $pageKey, string $slug, string $view, bool $usePowerGrid = false): string
     {
-        $title = Str::title($view) . ' ' . Str::title(str_replace('-', ' ', $slug));
+        $title = Str::title($view).' '.Str::title(str_replace('-', ' ', $slug));
 
         if ($usePowerGrid) {
             $stubHint = $this->powerGridStubPublishHint();
@@ -300,7 +299,7 @@ BLADE;
 
     private function renderVolt(string $pageKey, string $slug, string $view): string
     {
-        $title = Str::title($view) . ' ' . Str::title(str_replace('-', ' ', $slug));
+        $title = Str::title($view).' '.Str::title(str_replace('-', ' ', $slug));
 
         return <<<BLADE
 <?php
@@ -336,8 +335,8 @@ BLADE;
         }
         $vendorDir = base_path('vendor');
         $stubPaths = [
-            $vendorDir . '/power-grid/laravel-powergrid/stubs',
-            $vendorDir . '/power-grid/powergrid/stubs',
+            $vendorDir.'/power-grid/laravel-powergrid/stubs',
+            $vendorDir.'/power-grid/powergrid/stubs',
         ];
         foreach ($stubPaths as $path) {
             if (File::isDirectory($path)) {
@@ -350,7 +349,7 @@ BLADE;
 
     private function renderBlade(string $pageKey, string $slug, string $view): string
     {
-        $title = Str::title($view) . ' ' . Str::title(str_replace('-', ' ', $slug));
+        $title = Str::title($view).' '.Str::title(str_replace('-', ' ', $slug));
 
         return <<<BLADE
 <x-layouts.app :title="'{$title}'">

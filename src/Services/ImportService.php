@@ -47,7 +47,7 @@ final class ImportService
         }
 
         $models = [];
-        $files = File::glob($modelsPath . '/*.php');
+        $files = File::glob($modelsPath.'/*.php');
 
         foreach ($files as $file) {
             $name = basename($file, '.php');
@@ -115,7 +115,7 @@ final class ImportService
         }
 
         $actions = [];
-        $files = File::glob($actionsPath . '/*.php');
+        $files = File::glob($actionsPath.'/*.php');
 
         foreach ($files as $file) {
             $name = basename($file, '.php');

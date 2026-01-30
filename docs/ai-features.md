@@ -370,8 +370,8 @@ const fields = await fetch('/architect/api/ai/suggest-fields', {
 
 ### Describe with AI
 - Generate complete drafts from natural language descriptions
-- **Simple** button: calls `simple-generate` and shows a summary (e.g. "2 models, 3 actions, 2 pages") plus YAML; Apply merges into the draft
-- **Generate** button: calls `draft-from-ai` for full AI draft generation
+- **Summary first** button: calls `simple-generate` and shows a summary (e.g. "2 models, 3 actions, 2 pages") plus optional YAML (toggle "Show YAML"); Apply merges into the draft. After a summary, **Expand to full draft** calls `draft-from-ai` with the same description to replace the proposed draft with the full YAML in one step.
+- **Full draft** button: calls `draft-from-ai` for full AI draft generation in one step
 - Review and edit before applying; merge with existing draft or replace
 
 ### New feature (wizards)

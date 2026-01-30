@@ -27,6 +27,29 @@ Each key is a **singular** model name in StudlyCase (e.g. `Post`, `User`). Value
 - **Foreign key**: `column_id: id:RelatedModel` (e.g. `author_id: id:User`)
 - **Modifiers** (space-separated): `nullable`, `unique`, `index`, `foreign`
 
+### Shorthands and normalization
+
+When parsing, Architect **normalizes** model definitions so you can use short forms:
+
+- **Column list:** You can define columns as an array of names. The normalizer expands them using conventions:
+  - `id` → `id: bigIncrements`
+  - `timestamps` → `created_at: timestamp nullable`, `updated_at: timestamp nullable`
+  - `softDeletes` → `deleted_at: timestamp nullable`
+  - Other names get types inferred from the column name (e.g. `email` → string:255, `published_at` → timestamp nullable, `is_active` → boolean, `*_id` → foreignId).
+- **belongsTo FK:** If a model has `relationships.belongsTo: User` (or `User:author`) but does not define the foreign key column (e.g. `user_id`), the normalizer adds it (e.g. `user_id: foreignId`). You can still define the column explicitly to override.
+
+Example shorthand:
+
+```yaml
+models:
+  Post:
+    columns: [id, title, slug, body, published_at, timestamps]
+    relationships:
+      belongsTo: User:author
+```
+
+This is expanded to include `id`, `title`, `slug`, `body`, `published_at`, `created_at`, `updated_at`, and `user_id` (for the belongsTo) with appropriate types.
+
 ### Examples
 
 ```yaml

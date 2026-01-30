@@ -2,7 +2,7 @@
 
 This document lists the main Studio API endpoints used for draft generation and wizards, with request and response shapes. Use it as a single reference for frontend and API consumers.
 
-Base path: `/architect/api` (or your configured `architect.api.route_prefix`). All endpoints expect `Accept: application/json` and, for mutating requests, `Content-Type: application/json`. CSRF token is required for state-changing requests when using the web UI.
+Base path: `{architect.ui.route_prefix}/api` (default `/architect/api`). All endpoints expect `Accept: application/json` and, for mutating requests, `Content-Type: application/json`. CSRF token is required for state-changing requests when using the web UI.
 
 ---
 
@@ -232,12 +232,19 @@ Add a page (and route) to the draft.
 
 | Endpoint              | Method | Description |
 |-----------------------|--------|-------------|
-| `GET /architect/api/context`  | GET    | Full Studio context (stack, packages, existing_models, app_model, fingerprint, etc.). |
+| `GET /architect/api/context`  | GET    | Full Studio context (stack, packages, existing_models, app_model, fingerprint, starters, etc.). |
 | `GET /architect/api/draft`    | GET    | Read current draft file; returns `{ yaml, exists }`. |
 | `PUT /architect/api/draft`    | PUT    | Write draft file; body `{ yaml }` or raw body. Returns `{ valid, saved }`. |
+| `POST /architect/api/validate`| POST   | Validate draft; body optional `{ yaml }`. If `yaml` omitted, validates draft file. Returns `{ valid, errors }`. |
 | `POST /architect/api/plan`    | POST   | Build plan for current draft; returns `{ steps, summary }` with `path_hint` per step. |
 | `POST /architect/api/build`   | POST   | Run build; body optional `{ only?: string[], force?: boolean }`. Returns `{ success, generated, skipped, warnings, errors }`. |
 | `POST /architect/api/revert`  | POST   | Revert last build by restoring backed-up file contents. Returns `{ success, restored, errors }`. |
-| `POST /architect/api/import`  | POST   | Import from codebase; body optional `{ models?: string[], merge_schema_columns?: boolean }`. Returns draft object (models, actions, pages). |
+| `POST /architect/api/import`  | POST   | Import from codebase; body optional `{ models?: string[], merge_schema_columns?: boolean }`. Returns draft object (models, actions, pages). When `merge_schema_columns` is true, column types are inferred from existing DB columns and from column names (e.g. `email` → string:255, `published_at` → timestamp nullable) when not present. |
+| `GET /architect/api/starters` | GET    | List available starter template names; returns `{ starters: string[] }`. |
+| `GET /architect/api/starters/{name}` | GET | Get starter YAML by name; returns `{ name, yaml }`. 404 if not found. |
+| `GET /architect/api/status`   | GET    | Load Architect state (last run, generated files, etc.); returns full state object. |
+| `GET /architect/api/explain`  | GET    | Summarise current draft (model/action/page names and counts); returns `{ draft_path, models, actions, pages, model_count, action_count, page_count }`. |
+| `GET /architect/api/preview`  | GET    | Preview generated code; query `type` (model|action|page) and `name`. Returns `{ code }`. |
+| `POST /architect/api/analyze`  | POST   | Analyze draft (from body `yaml` or file); returns package-aware suggestions, validation, and compatibility. |
 
 For AI-specific endpoints (chat, suggestions, validate, generate-code, etc.), see [AI features](ai-features.md).

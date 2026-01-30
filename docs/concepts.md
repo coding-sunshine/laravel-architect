@@ -56,7 +56,7 @@ Architect runs a set of **generators** during build. Each generator is responsib
 | TypeScript  | `models.*`            | `resources/js/types/architect.d.ts` |
 | Test        | `models.*` / actions  | `tests/Feature/Controllers/*Test.php` |
 
-Not all generators run for every draft; for example, the seeder generator runs only for models that have a `seeder` block. The plan command (`architect:plan`) shows what would be generated without writing files; each step includes an optional path hint indicating where the artifact will be created or modified. After a successful build, you can revert the last build to restore the previous contents of overwritten files (see Studio API or command palette).
+Not all generators run for every draft; for example, the seeder generator runs only for models that have a `seeder` block. The plan command (`architect:plan`) shows what would be generated without writing files; each step includes an optional path hint indicating where the artifact will be created or modified. After a successful build, you can revert the last build to restore the previous contents of overwritten files (see Studio API or command palette). When parsing drafts, Architect normalizes model definitions: column shorthands (e.g. `id`, `timestamps`, `columns: [title, published_at]`) are expanded, and missing foreign key columns for `belongsTo` relationships are added. When importing from the codebase with `merge_schema_columns`, column types are inferred from existing DB columns and from column names (e.g. `email` → string, `published_at` → timestamp nullable). See [Schema Reference](SCHEMA.md#shorthands-and-normalization).
 
 ## Change detection
 

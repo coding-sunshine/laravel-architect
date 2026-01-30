@@ -47,6 +47,7 @@ AI integration for generating YAML drafts from natural language. Requires [echol
 | `enabled` | bool | `env('ARCHITECT_AI_ENABLED', true)` | Whether to use AI when generating drafts. |
 | `provider` | string | `env('ARCHITECT_AI_PROVIDER', 'openrouter')` | Prism provider name. |
 | `model` | string\|null | `env('ARCHITECT_AI_MODEL')` | Model to use (optional). |
+| `default_instructions` | string | (see config) | Instruction prepended to every AI prompt (e.g. "check packages first"). |
 | `max_retries` | int | 2 | Number of retries when validation fails after AI generation. |
 | `retry_with_feedback` | bool | true | When true, send validation errors back to the model on retry. |
 | `max_context_tokens` | int\|null | null | Optional cap on context size sent to the model (e.g. 4096). |
@@ -164,6 +165,14 @@ Optional custom package hints. Keys are Composer package names (e.g. `vendor/pac
 - **suggested_commands**: array of Artisan command strings.
 
 Merged with Architect's built-in known packages (Filament, Spatie Media Library, Spatie Permission, Inertia, Livewire, Volt). Used by `architect:packages` and future package-aware generators. See [Packages](packages.md).
+
+---
+
+## crud_packages
+
+**Type:** array (package name => variant)
+
+Optional. Package names that provide table/CRUD UI. Used by `CrudStackResolver` to choose `power_grid`, `inertia_tables`, or `filament_resource` when generating CRUD. Keys are Composer package names; values are `power_grid`, `inertia_tables`, or `filament_resource`. Built-in entries: `power-grid/laravel-powergrid`, `power-grid/powergrid`, `protonemedia/inertiajs-tables-laravel`, `filament/filament`. Add or override here to support other table packages.
 
 ---
 

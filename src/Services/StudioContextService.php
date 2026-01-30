@@ -15,6 +15,7 @@ final class StudioContextService
         private readonly PackageRegistry $packageRegistry,
         private readonly ImportService $importService,
         private readonly GeneratorVariantResolver $variantResolver,
+        private readonly AppModelService $appModelService,
     ) {}
 
     /**
@@ -33,6 +34,8 @@ final class StudioContextService
      *     features: array<string, bool>,
      *     schema_hints: array<string, array{schema_key: string, description: string, requires_package: string, available: bool}>,
      *     ai_capabilities: array{available: bool, provider: string|null, features: array<string, bool>},
+     *     app_model: array{routes: array, db_schema: array, models: array, actions: array, pages: array, packages: array, stack: string, conventions: array},
+     *     fingerprint: array{stack: string, models: array, route_count: int, route_sample: array, package_names: array, conventions: array},
      * }
      */
     public function build(): array
@@ -69,6 +72,8 @@ final class StudioContextService
         $features = $this->variantResolver->resolveFeatures();
         $schemaHints = $this->buildSchemaHints($installed);
         $aiCapabilities = $this->buildAICapabilities($aiEnabled);
+        $appModel = $this->appModelService->appModel();
+        $fingerprint = $this->appModelService->fingerprint();
 
         return [
             'stack' => $stack,
@@ -83,6 +88,8 @@ final class StudioContextService
             'features' => $features,
             'schema_hints' => $schemaHints,
             'ai_capabilities' => $aiCapabilities,
+            'app_model' => $appModel,
+            'fingerprint' => $fingerprint,
         ];
     }
 

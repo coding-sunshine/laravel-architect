@@ -11,6 +11,7 @@ use CodingSunshine\Architect\Services\AI\AIPackageAnalyzer;
 use CodingSunshine\Architect\Services\AI\AISchemaSuggestionService;
 use CodingSunshine\Architect\Services\AI\AISchemaValidator;
 use CodingSunshine\Architect\Services\AI\PackageAssistant;
+use CodingSunshine\Architect\Services\AppModelService;
 use CodingSunshine\Architect\Services\DraftParser;
 use CodingSunshine\Architect\Support\Draft;
 use Illuminate\Http\JsonResponse;
@@ -80,7 +81,7 @@ final class ArchitectAIController
     /**
      * Get suggestions for the schema.
      */
-    public function suggestions(Request $request, AISchemaSuggestionService $suggestionService, DraftParser $parser): JsonResponse
+    public function suggestions(Request $request, AISchemaSuggestionService $suggestionService, DraftParser $parser, AppModelService $appModel): JsonResponse
     {
         $draft = $this->getDraft($request, $parser);
 
@@ -88,7 +89,7 @@ final class ArchitectAIController
             return response()->json(['error' => 'No draft available.'], 404);
         }
 
-        $suggestions = $suggestionService->analyzeDraft($draft);
+        $suggestions = $suggestionService->analyzeDraft($draft, $appModel->fingerprint());
 
         if ($suggestions === null) {
             return response()->json(['error' => 'AI suggestions are not available.'], 503);
@@ -100,7 +101,7 @@ final class ArchitectAIController
     /**
      * Suggest fields for a model.
      */
-    public function suggestFields(Request $request, AISchemaSuggestionService $suggestionService): JsonResponse
+    public function suggestFields(Request $request, AISchemaSuggestionService $suggestionService, AppModelService $appModel): JsonResponse
     {
         $modelName = $request->input('model');
         $existingFields = $request->input('existing_fields', []);
@@ -111,7 +112,8 @@ final class ArchitectAIController
 
         $fields = $suggestionService->suggestFieldsForModel(
             trim($modelName),
-            is_array($existingFields) ? $existingFields : []
+            is_array($existingFields) ? $existingFields : [],
+            $appModel->fingerprint()
         );
 
         if ($fields === null) {
@@ -198,7 +200,7 @@ final class ArchitectAIController
     /**
      * Generate code for a model.
      */
-    public function generateCode(Request $request, AICodeGenerator $generator, DraftParser $parser): JsonResponse
+    public function generateCode(Request $request, AICodeGenerator $generator, DraftParser $parser, AppModelService $appModel): JsonResponse
     {
         $modelName = $request->input('model');
         $type = $request->input('type', 'model'); // model, factory, seeder, tests, controller, policy
@@ -209,14 +211,15 @@ final class ArchitectAIController
 
         $draft = $this->getDraft($request, $parser);
         $modelDef = $draft?->getModel(trim($modelName)) ?? [];
+        $fingerprint = $appModel->fingerprint();
 
         $code = match ($type) {
-            'factory' => $generator->generateFactory(trim($modelName), $modelDef),
-            'seeder' => $generator->generateSeeder(trim($modelName), $modelDef),
-            'tests' => $generator->generateTests(trim($modelName), $modelDef, $request->input('framework', 'pest')),
-            'controller' => $generator->generateControllerMethods(trim($modelName), $modelDef, $request->input('stack', 'inertia-react')),
-            'policy' => $generator->generatePolicy(trim($modelName), $modelDef),
-            'request' => $generator->generateFormRequest(trim($modelName), $modelDef, $request->input('action', 'store')),
+            'factory' => $generator->generateFactory(trim($modelName), $modelDef, $fingerprint),
+            'seeder' => $generator->generateSeeder(trim($modelName), $modelDef, 10, $fingerprint),
+            'tests' => $generator->generateTests(trim($modelName), $modelDef, $request->input('framework', 'pest'), $fingerprint),
+            'controller' => $generator->generateControllerMethods(trim($modelName), $modelDef, $request->input('stack', 'inertia-react'), $fingerprint),
+            'policy' => $generator->generatePolicy(trim($modelName), $modelDef, $fingerprint),
+            'request' => $generator->generateFormRequest(trim($modelName), $modelDef, $request->input('action', 'store'), $fingerprint),
             default => null,
         };
 
@@ -230,7 +233,7 @@ final class ArchitectAIController
     /**
      * Generate boilerplate for adding a feature.
      */
-    public function generateBoilerplate(Request $request, AIBoilerplateGenerator $generator, DraftParser $parser): JsonResponse
+    public function generateBoilerplate(Request $request, AIBoilerplateGenerator $generator, DraftParser $parser, AppModelService $appModel): JsonResponse
     {
         $modelName = $request->input('model');
         $feature = $request->input('feature');
@@ -246,7 +249,7 @@ final class ArchitectAIController
         $draft = $this->getDraft($request, $parser);
         $modelDef = $draft?->getModel(trim($modelName)) ?? [];
 
-        $boilerplate = $generator->generateFeatureBoilerplate(trim($modelName), $modelDef, trim($feature));
+        $boilerplate = $generator->generateFeatureBoilerplate(trim($modelName), $modelDef, trim($feature), $appModel->fingerprint());
 
         if ($boilerplate === null) {
             return response()->json(['error' => 'AI boilerplate generation is not available.'], 503);
@@ -258,7 +261,7 @@ final class ArchitectAIController
     /**
      * Generate complete files for a model.
      */
-    public function generateComplete(Request $request, AIBoilerplateGenerator $generator, DraftParser $parser): JsonResponse
+    public function generateComplete(Request $request, AIBoilerplateGenerator $generator, DraftParser $parser, AppModelService $appModel): JsonResponse
     {
         $modelName = $request->input('model');
         $type = $request->input('type', 'model'); // model, migration, factory, seeder, tests, resource
@@ -269,14 +272,15 @@ final class ArchitectAIController
 
         $draft = $this->getDraft($request, $parser);
         $modelDef = $draft?->getModel(trim($modelName)) ?? [];
+        $fingerprint = $appModel->fingerprint();
 
         $code = match ($type) {
-            'model' => $generator->generateCompleteModel(trim($modelName), $modelDef),
-            'migration' => $generator->generateCompleteMigration(trim($modelName), $modelDef),
-            'factory' => $generator->generateCompleteFactory(trim($modelName), $modelDef),
-            'seeder' => $generator->generateCompleteSeeder(trim($modelName), $modelDef, $request->integer('count', 10)),
-            'tests' => $generator->generateCompleteTests(trim($modelName), $modelDef, $request->input('framework', 'pest')),
-            'resource' => $generator->generateResource(trim($modelName), $modelDef),
+            'model' => $generator->generateCompleteModel(trim($modelName), $modelDef, $fingerprint),
+            'migration' => $generator->generateCompleteMigration(trim($modelName), $modelDef, $fingerprint),
+            'factory' => $generator->generateCompleteFactory(trim($modelName), $modelDef, $fingerprint),
+            'seeder' => $generator->generateCompleteSeeder(trim($modelName), $modelDef, $request->integer('count', 10), $fingerprint),
+            'tests' => $generator->generateCompleteTests(trim($modelName), $modelDef, $request->input('framework', 'pest'), $fingerprint),
+            'resource' => $generator->generateResource(trim($modelName), $modelDef, $fingerprint),
             default => null,
         };
 

@@ -28,9 +28,11 @@ use CodingSunshine\Architect\Services\AI\AIPackageAnalyzer;
 use CodingSunshine\Architect\Services\AI\AISchemaSuggestionService;
 use CodingSunshine\Architect\Services\AI\AISchemaValidator;
 use CodingSunshine\Architect\Services\AI\PackageAssistant;
+use CodingSunshine\Architect\Services\AppModelService;
 use CodingSunshine\Architect\Services\BuildOrchestrator;
 use CodingSunshine\Architect\Services\BuildPlanner;
 use CodingSunshine\Architect\Services\ChangeDetector;
+use CodingSunshine\Architect\Services\CrudStackResolver;
 use CodingSunshine\Architect\Services\DraftGenerator;
 use CodingSunshine\Architect\Services\DraftParser;
 use CodingSunshine\Architect\Services\Generators\ActionGenerator;
@@ -51,6 +53,8 @@ use CodingSunshine\Architect\Services\PackageDiscovery;
 use CodingSunshine\Architect\Services\PackageRegistry;
 use CodingSunshine\Architect\Services\PackageSuggestionService;
 use CodingSunshine\Architect\Services\PackageValidationService;
+use CodingSunshine\Architect\Services\RouteDiscovery;
+use CodingSunshine\Architect\Services\SchemaDiscovery;
 use CodingSunshine\Architect\Services\StackDetector;
 use CodingSunshine\Architect\Services\StateManager;
 use CodingSunshine\Architect\Services\StudioContextService;
@@ -99,6 +103,10 @@ final class ArchitectServiceProvider extends PackageServiceProvider
         });
         $this->app->singleton(UiDriverDetector::class);
         $this->app->singleton(ImportService::class);
+        $this->app->singleton(RouteDiscovery::class);
+        $this->app->singleton(SchemaDiscovery::class);
+        $this->app->singleton(AppModelService::class);
+        $this->app->singleton(CrudStackResolver::class);
 
         // Package-aware services
         $this->app->singleton(GeneratorVariantResolver::class);
@@ -197,6 +205,7 @@ final class ArchitectServiceProvider extends PackageServiceProvider
             $router->middleware('web')->post($apiPrefix.'/plan', [ArchitectApiController::class, 'plan'])->name('architect.api.plan');
             $router->middleware('web')->post($apiPrefix.'/build', [ArchitectApiController::class, 'build'])->name('architect.api.build');
             $router->middleware('web')->post($apiPrefix.'/draft-from-ai', [ArchitectApiController::class, 'draftFromAi'])->name('architect.api.draft-from-ai');
+            $router->middleware('web')->post($apiPrefix.'/simple-generate', [ArchitectApiController::class, 'simpleGenerate'])->name('architect.api.simple-generate');
             $router->middleware('web')->get($apiPrefix.'/starters', [ArchitectApiController::class, 'starters'])->name('architect.api.starters');
             $router->middleware('web')->get($apiPrefix.'/starters/{name}', [ArchitectApiController::class, 'getStarter'])->name('architect.api.starters.get');
             $router->middleware('web')->post($apiPrefix.'/import', [ArchitectApiController::class, 'import'])->name('architect.api.import');
@@ -204,6 +213,10 @@ final class ArchitectServiceProvider extends PackageServiceProvider
             $router->middleware('web')->get($apiPrefix.'/explain', [ArchitectApiController::class, 'explain'])->name('architect.api.explain');
             $router->middleware('web')->get($apiPrefix.'/preview', [ArchitectApiController::class, 'preview'])->name('architect.api.preview');
             $router->middleware('web')->post($apiPrefix.'/analyze', [ArchitectApiController::class, 'analyze'])->name('architect.api.analyze');
+            $router->middleware('web')->post($apiPrefix.'/wizard/add-model', [ArchitectApiController::class, 'wizardAddModel'])->name('architect.api.wizard.add-model');
+            $router->middleware('web')->post($apiPrefix.'/wizard/add-crud-resource', [ArchitectApiController::class, 'wizardAddCrudResource'])->name('architect.api.wizard.add-crud-resource');
+            $router->middleware('web')->post($apiPrefix.'/wizard/add-relationship', [ArchitectApiController::class, 'wizardAddRelationship'])->name('architect.api.wizard.add-relationship');
+            $router->middleware('web')->post($apiPrefix.'/wizard/add-page', [ArchitectApiController::class, 'wizardAddPage'])->name('architect.api.wizard.add-page');
 
             // AI-powered endpoints
             $aiPrefix = $apiPrefix.'/ai';

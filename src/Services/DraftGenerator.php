@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace CodingSunshine\Architect\Services;
 
 use CodingSunshine\Architect\Schema\SchemaValidator;
+use CodingSunshine\Architect\Services\AI\DefaultAIPrompt;
 use Illuminate\Support\Facades\File;
 
 final class DraftGenerator
@@ -15,21 +16,26 @@ final class DraftGenerator
 
     /**
      * Generate YAML draft from natural language description.
-     * When Prism/echolabs is not available or AI is disabled, returns a minimal stub.
+     * When Prism is not available or AI is disabled, returns a minimal stub.
+     *
+     * @param  array<string, mixed>|null  $fingerprint  Optional app fingerprint from AppModelService (packages, stack, models). When provided, AI uses this instead of full codebase.
      */
-    public function generate(string $description, ?string $existingDraftPath = null): string
+    public function generate(string $description, ?string $existingDraftPath = null, ?array $fingerprint = null): string
     {
         $aiEnabled = config('architect.ai.enabled', true);
         $prismAvailable = class_exists(\Prism\Prism\Facades\Prism::class);
 
         if ($aiEnabled && $prismAvailable) {
-            return $this->generateWithAi($description, $existingDraftPath);
+            return $this->generateWithAi($description, $existingDraftPath, $fingerprint);
         }
 
         return $this->generateStub($description, $existingDraftPath);
     }
 
-    private function generateWithAi(string $description, ?string $existingDraftPath): string
+    /**
+     * @param  array<string, mixed>|null  $fingerprint
+     */
+    private function generateWithAi(string $description, ?string $existingDraftPath, ?array $fingerprint = null): string
     {
         $existingYaml = $existingDraftPath && File::exists($existingDraftPath)
             ? File::get($existingDraftPath)
@@ -40,8 +46,8 @@ final class DraftGenerator
         $lastErrors = [];
 
         for ($attempt = 0; $attempt <= $maxRetries; $attempt++) {
-            $prompt = $this->buildPrompt($description, $existingYaml, $retryWithFeedback ? $lastErrors : null);
-            $systemPrompt = $this->getSystemPrompt();
+            $prompt = $this->buildPrompt($description, $existingYaml, $retryWithFeedback ? $lastErrors : null, $fingerprint);
+            $systemPrompt = $this->getSystemPrompt($fingerprint);
 
             try {
                 $response = \Prism\Prism\Facades\Prism::text()
@@ -118,10 +124,17 @@ YAML;
 
     /**
      * @param  array<int, string>|null  $validationErrors
+     * @param  array<string, mixed>|null  $fingerprint
      */
-    private function buildPrompt(string $description, ?string $existingYaml, ?array $validationErrors = null): string
+    private function buildPrompt(string $description, ?string $existingYaml, ?array $validationErrors = null, ?array $fingerprint = null): string
     {
-        $prompt = "Generate a YAML scaffold definition for:\n\n{$description}";
+        $prompt = '';
+
+        if ($fingerprint !== null && $fingerprint !== []) {
+            $prompt .= "Current app context (use this instead of full codebase; check packages first for the use case):\n".json_encode($fingerprint, JSON_PRETTY_PRINT)."\n\n";
+        }
+
+        $prompt .= "Generate a YAML scaffold definition for:\n\n{$description}";
 
         if ($existingYaml !== null && $existingYaml !== '') {
             $prompt .= "\n\nExtend this existing draft (only add new, do not duplicate):\n\n{$existingYaml}";
@@ -137,11 +150,17 @@ YAML;
         return $prompt;
     }
 
-    private function getSystemPrompt(): string
+    /**
+     * @param  array<string, mixed>|null  $fingerprint
+     */
+    private function getSystemPrompt(?array $fingerprint = null): string
     {
-        return <<<'PROMPT'
+        $default = DefaultAIPrompt::get()."\n\n";
+
+        return $default.<<<'PROMPT'
 You are a Laravel application architect. Generate ONLY valid YAML matching the Architect draft schema.
 Output only the YAML document, no markdown fences or explanations.
+The current app is described by the provided fingerprint (packages, stack, model names, conventions); use it to align your output.
 
 Schema rules:
 - models: keys are singular StudlyCase (Post, Comment). Values are column definitions (type:modifiers) or nested keys (relationships, seeder, softDeletes).

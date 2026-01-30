@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace CodingSunshine\Architect\Http\Controllers;
 
 use CodingSunshine\Architect\Schema\SchemaValidator;
+use CodingSunshine\Architect\Services\AppModelService;
 use CodingSunshine\Architect\Services\BuildOrchestrator;
 use CodingSunshine\Architect\Services\BuildPlanner;
 use CodingSunshine\Architect\Services\DraftGenerator;
@@ -12,11 +13,13 @@ use CodingSunshine\Architect\Services\DraftParser;
 use CodingSunshine\Architect\Services\ImportService;
 use CodingSunshine\Architect\Services\PackageSuggestionService;
 use CodingSunshine\Architect\Services\PackageValidationService;
+use CodingSunshine\Architect\Services\SchemaDiscovery;
 use CodingSunshine\Architect\Services\StateManager;
 use CodingSunshine\Architect\Services\StudioContextService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 use Symfony\Component\Yaml\Yaml;
 
 final class ArchitectApiController
@@ -150,7 +153,7 @@ final class ArchitectApiController
         ]);
     }
 
-    public function draftFromAi(Request $request, DraftGenerator $generator): JsonResponse
+    public function draftFromAi(Request $request, DraftGenerator $generator, AppModelService $appModel): JsonResponse
     {
         $description = $request->input('description');
 
@@ -162,7 +165,7 @@ final class ArchitectApiController
         $existingPath = File::exists($extend) ? $extend : null;
 
         try {
-            $yaml = $generator->generate(trim($description), $existingPath);
+            $yaml = $generator->generate(trim($description), $existingPath, $appModel->fingerprint());
         } catch (\Throwable $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
@@ -176,6 +179,45 @@ final class ArchitectApiController
         return response()->json([
             'yaml' => $yaml,
             'applied' => $apply,
+        ]);
+    }
+
+    /**
+     * Simple flow: generate draft from description, return summary + yaml (no file diffs).
+     * Use fingerprint and current draft. Response: summary (model/action/page counts) and draft delta (full yaml).
+     */
+    public function simpleGenerate(Request $request, DraftGenerator $generator, AppModelService $appModel, DraftParser $parser): JsonResponse
+    {
+        $description = $request->input('description');
+
+        if (! is_string($description) || trim($description) === '') {
+            return response()->json(['error' => 'Description is required.'], 422);
+        }
+
+        $draftPath = config('architect.draft_path', base_path('draft.yaml'));
+        $existingPath = File::exists($draftPath) ? $draftPath : null;
+
+        try {
+            $yaml = $generator->generate(trim($description), $existingPath, $appModel->fingerprint());
+        } catch (\Throwable $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+
+        $summary = ['models' => 0, 'actions' => 0, 'pages' => 0];
+        try {
+            $data = Yaml::parse($yaml);
+            if (is_array($data)) {
+                $summary['models'] = count($data['models'] ?? []);
+                $summary['actions'] = count($data['actions'] ?? []);
+                $summary['pages'] = count($data['pages'] ?? []);
+            }
+        } catch (\Throwable) {
+            // keep zero counts
+        }
+
+        return response()->json([
+            'summary' => $summary,
+            'yaml' => $yaml,
         ]);
     }
 
@@ -338,5 +380,195 @@ final class ArchitectApiController
             'suggestions' => $suggestions,
             'validation' => $validation,
         ]);
+    }
+
+    /**
+     * Wizard: Add model. POST body: name, table (optional), columns (optional) or infer_from_db (use SchemaDiscovery).
+     */
+    public function wizardAddModel(Request $request, DraftParser $parser, SchemaDiscovery $schemaDiscovery, SchemaValidator $validator): JsonResponse
+    {
+        $name = $request->input('name');
+        if (! is_string($name) || trim($name) === '') {
+            return response()->json(['error' => 'Model name is required.'], 422);
+        }
+        $name = Str::studly(trim($name));
+        $table = $request->input('table');
+        $table = is_string($table) && $table !== '' ? $table : Str::snake(Str::plural($name));
+        $columns = $request->input('columns');
+        $inferFromDb = $request->boolean('infer_from_db');
+        if ($inferFromDb) {
+            $dbSchema = $schemaDiscovery->discover();
+            $cols = $dbSchema[$table]['columns'] ?? [];
+            $modelDef = [];
+            foreach ($cols as $col) {
+                $modelDef[$col] = 'string';
+            }
+        } else {
+            $modelDef = is_array($columns) && $columns !== [] ? $columns : ['name' => 'string'];
+        }
+        $current = $this->getCurrentDraftArray($request, $parser);
+        $current['models'] = $current['models'] ?? [];
+        $current['models'][$name] = $modelDef;
+        $current['actions'] = $current['actions'] ?? [];
+        $current['actions']["Create{$name}"] = ['model' => $name, 'return' => $name];
+        $current['actions']["Update{$name}"] = ['model' => $name, 'params' => [$name, 'attributes'], 'return' => 'void'];
+        $current['actions']["Delete{$name}"] = ['model' => $name, 'params' => [$name], 'return' => 'void'];
+        $current['pages'] = $current['pages'] ?? [];
+        $current['pages'][$name] = $current['pages'][$name] ?? [];
+        $current['routes'] = $current['routes'] ?? [];
+        $current['routes'][$name] = ['resource' => true];
+        $errors = $validator->validate($current);
+        if ($errors !== []) {
+            return response()->json(['error' => 'Validation failed.', 'errors' => $errors], 422);
+        }
+        $yaml = Yaml::dump($current, 4, 2);
+
+        return response()->json([
+            'summary' => ['models' => count($current['models']), 'actions' => count($current['actions']), 'pages' => count($current['pages'])],
+            'yaml' => $yaml,
+        ]);
+    }
+
+    /**
+     * Wizard: Add CRUD resource for a model. POST body: model_name, options (api, admin).
+     */
+    public function wizardAddCrudResource(Request $request, DraftParser $parser, SchemaValidator $validator): JsonResponse
+    {
+        $modelName = $request->input('model_name');
+        if (! is_string($modelName) || trim($modelName) === '') {
+            return response()->json(['error' => 'Model name is required.'], 422);
+        }
+        $modelName = Str::studly(trim($modelName));
+        $current = $this->getCurrentDraftArray($request, $parser);
+        $current['models'] = $current['models'] ?? [];
+        if (! isset($current['models'][$modelName])) {
+            $current['models'][$modelName] = ['name' => 'string'];
+        }
+        $current['actions'] = $current['actions'] ?? [];
+        $current['actions']["Create{$modelName}"] = ['model' => $modelName, 'return' => $modelName];
+        $current['actions']["Update{$modelName}"] = ['model' => $modelName, 'params' => [$modelName, 'attributes'], 'return' => 'void'];
+        $current['actions']["Delete{$modelName}"] = ['model' => $modelName, 'params' => [$modelName], 'return' => 'void'];
+        $current['pages'] = $current['pages'] ?? [];
+        $current['pages'][$modelName] = $current['pages'][$modelName] ?? [];
+        $current['routes'] = $current['routes'] ?? [];
+        $current['routes'][$modelName] = ['resource' => true];
+        $errors = $validator->validate($current);
+        if ($errors !== []) {
+            return response()->json(['error' => 'Validation failed.', 'errors' => $errors], 422);
+        }
+        $yaml = Yaml::dump($current, 4, 2);
+
+        return response()->json([
+            'summary' => ['models' => count($current['models']), 'actions' => count($current['actions']), 'pages' => count($current['pages'])],
+            'yaml' => $yaml,
+        ]);
+    }
+
+    /**
+     * Wizard: Add relationship. POST body: from_model, type, to_model.
+     */
+    public function wizardAddRelationship(Request $request, DraftParser $parser, SchemaValidator $validator): JsonResponse
+    {
+        $from = $request->input('from_model');
+        $type = $request->input('type');
+        $to = $request->input('to_model');
+        if (! is_string($from) || ! is_string($type) || ! is_string($to)) {
+            return response()->json(['error' => 'from_model, type, and to_model are required.'], 422);
+        }
+        $from = Str::studly(trim($from));
+        $to = Str::studly(trim($to));
+        $allowed = ['belongsTo', 'hasMany', 'hasOne', 'belongsToMany'];
+        if (! in_array($type, $allowed, true)) {
+            return response()->json(['error' => 'type must be one of: '.implode(', ', $allowed)], 422);
+        }
+        $current = $this->getCurrentDraftArray($request, $parser);
+        $current['models'] = $current['models'] ?? [];
+        if (! isset($current['models'][$from])) {
+            $current['models'][$from] = [];
+        }
+        if (! is_array($current['models'][$from])) {
+            $current['models'][$from] = [];
+        }
+        $current['models'][$from]['relationships'] = $current['models'][$from]['relationships'] ?? [];
+        $rel = $current['models'][$from]['relationships'];
+        $existing = $rel[$type] ?? '';
+        $current['models'][$from]['relationships'][$type] = $existing === '' ? $to : $existing.', '.$to;
+        $errors = $validator->validate($current);
+        if ($errors !== []) {
+            return response()->json(['error' => 'Validation failed.', 'errors' => $errors], 422);
+        }
+        $yaml = Yaml::dump($current, 4, 2);
+
+        return response()->json([
+            'summary' => ['relationship' => "{$from} {$type} {$to}"],
+            'yaml' => $yaml,
+        ]);
+    }
+
+    /**
+     * Wizard: Add page. POST body: name, type (index|show|create|edit), model (optional).
+     */
+    public function wizardAddPage(Request $request, DraftParser $parser, SchemaValidator $validator): JsonResponse
+    {
+        $name = $request->input('name');
+        $type = $request->input('type');
+        $model = $request->input('model');
+        if (! is_string($name) || trim($name) === '') {
+            return response()->json(['error' => 'Page name is required.'], 422);
+        }
+        $name = Str::studly(trim($name));
+        $type = is_string($type) && $type !== '' ? $type : 'index';
+        $current = $this->getCurrentDraftArray($request, $parser);
+        $current['pages'] = $current['pages'] ?? [];
+        $pageKey = is_string($model) && $model !== '' ? Str::studly(trim($model)) : $name;
+        $current['pages'][$pageKey] = is_array($current['pages'][$pageKey] ?? null) ? $current['pages'][$pageKey] : [];
+        $current['routes'] = $current['routes'] ?? [];
+        if (! isset($current['routes'][$pageKey])) {
+            $current['routes'][$pageKey] = [];
+        }
+        $errors = $validator->validate($current);
+        if ($errors !== []) {
+            return response()->json(['error' => 'Validation failed.', 'errors' => $errors], 422);
+        }
+        $yaml = Yaml::dump($current, 4, 2);
+
+        return response()->json([
+            'summary' => ['pages' => count($current['pages'])],
+            'yaml' => $yaml,
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function getCurrentDraftArray(Request $request, DraftParser $parser): array
+    {
+        $yaml = $request->input('yaml');
+        if (is_string($yaml) && trim($yaml) !== '') {
+            try {
+                $data = Yaml::parse($yaml);
+
+                return is_array($data) ? $data : ['models' => [], 'actions' => [], 'pages' => [], 'routes' => [], 'schema_version' => '1.0'];
+            } catch (\Throwable) {
+                return ['models' => [], 'actions' => [], 'pages' => [], 'routes' => [], 'schema_version' => '1.0'];
+            }
+        }
+        $path = config('architect.draft_path', base_path('draft.yaml'));
+        if (! File::exists($path)) {
+            return ['models' => [], 'actions' => [], 'pages' => [], 'routes' => [], 'schema_version' => '1.0'];
+        }
+        try {
+            $draft = $parser->parse($path);
+        } catch (\Throwable) {
+            return ['models' => [], 'actions' => [], 'pages' => [], 'routes' => [], 'schema_version' => '1.0'];
+        }
+
+        return [
+            'models' => $draft->models,
+            'actions' => $draft->actions,
+            'pages' => $draft->pages,
+            'routes' => $draft->routes,
+            'schema_version' => $draft->schemaVersion,
+        ];
     }
 }

@@ -33,6 +33,14 @@ Configure the provider in `config/architect.php`:
 ],
 ```
 
+## App Context (Fingerprint)
+
+All AI calls receive a compact **fingerprint** of your app (stack, model names and tables, route count and sample, package names, conventions). No raw file contents or full codebase are sent. This keeps context small and consistent. The fingerprint is built from Laravel APIs (routes, schema, package discovery) and is cached for performance.
+
+## Default Instructions
+
+Every AI prompt is prepended with a default instruction: *"Check the application's installed packages and conventions first; prefer using an existing package (e.g. Filament, Power Grid, Inertia Tables) for the use case; only fall back to plain framework code when no suitable package is installed."* You can override this in `config/architect.php` under `ai.default_instructions`.
+
 ## AI Services
 
 ### AIPackageAnalyzer
@@ -320,6 +328,12 @@ All AI features are accessible via the Studio API:
 | `/architect/api/ai/generate-boilerplate` | POST | Generate feature boilerplate |
 | `/architect/api/ai/generate-complete` | POST | Generate complete files |
 
+| `/architect/api/simple-generate` | POST | Generate draft from description; returns summary (models, actions, pages) + full YAML |
+| `/architect/api/wizard/add-model` | POST | Wizard: add a model (optional: infer columns from DB) |
+| `/architect/api/wizard/add-crud-resource` | POST | Wizard: add full CRUD for a model |
+| `/architect/api/wizard/add-relationship` | POST | Wizard: add relationship between two models |
+| `/architect/api/wizard/add-page` | POST | Wizard: add a page |
+
 ### Example API Usage
 
 ```javascript
@@ -356,8 +370,14 @@ const fields = await fetch('/architect/api/ai/suggest-fields', {
 
 ### Describe with AI
 - Generate complete drafts from natural language descriptions
-- Review and edit before applying
-- Merge with existing draft or replace
+- **Simple** button: calls `simple-generate` and shows a summary (e.g. "2 models, 3 actions, 2 pages") plus YAML; Apply merges into the draft
+- **Generate** button: calls `draft-from-ai` for full AI draft generation
+- Review and edit before applying; merge with existing draft or replace
+
+### New feature (wizards)
+- **New feature** dropdown (no AI required): Add model, Add CRUD resource, Add relationship, Add page
+- Each opens a small form; on Apply, the returned draft is merged into the current draft
+- Uses app model and current draft only; useful for quick structural changes
 
 ### Features Panel
 - View available schema features based on installed packages

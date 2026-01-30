@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace CodingSunshine\Architect\Services\AI;
 
+use CodingSunshine\Architect\Services\AppModelService;
 use CodingSunshine\Architect\Services\PackageDiscovery;
 use CodingSunshine\Architect\Support\Draft;
 use Prism\Prism\Facades\Prism;
@@ -29,6 +30,7 @@ final class PackageAssistant extends AIServiceBase
     private array $conversationHistory = [];
 
     public function __construct(
+        private readonly AppModelService $appModelService,
         private readonly PackageDiscovery $packageDiscovery,
         private readonly AIPackageAnalyzer $packageAnalyzer,
         private readonly AISchemaSuggestionService $suggestionService,
@@ -134,6 +136,7 @@ final class PackageAssistant extends AIServiceBase
                 'actions' => array_keys($draft->actions),
                 'pages' => array_keys($draft->pages),
             ] : null,
+            'fingerprint' => $this->appModelService->fingerprint(),
             'installed_packages' => array_keys($installed),
             'laravel_packages' => array_keys($knownPackages),
             'conversation_length' => count($this->conversationHistory),
@@ -231,6 +234,11 @@ Guidelines:
 
 PROMPT;
 
+        if (isset($context['fingerprint']) && $context['fingerprint'] !== []) {
+            $prompt .= "\nCurrent app context (use this instead of full codebase; check packages first for the use case):\n";
+            $prompt .= json_encode($context['fingerprint'], JSON_PRETTY_PRINT)."\n";
+        }
+
         if ($context['draft'] !== null) {
             $prompt .= "\nCurrent schema:\n";
             $prompt .= 'Models: '.implode(', ', array_keys($context['draft']['models']))."\n";
@@ -243,7 +251,7 @@ PROMPT;
 
         $prompt .= "\nInstalled Laravel packages: ".implode(', ', $context['laravel_packages']);
 
-        return $prompt;
+        return $this->prependDefaultInstructions($prompt);
     }
 
     /**

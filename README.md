@@ -17,6 +17,8 @@ Define your application structure in YAML. Use natural language (with Prism) to 
 - **Stack-aware** – Detects Inertia React, Inertia Vue, Livewire, Volt, or Blade and generates the right pages and controllers
 - **Package-aware** – Automatically detects 30+ Laravel packages and suggests schema features, traits, and configurations
 - **AI Assistant** – Interactive chat assistant for schema design, code generation, and package recommendations
+- **Simple generate** – Get a draft summary (models, actions, pages) and YAML from a short description
+- **Wizards** – Add model, CRUD resource, relationship, or page without AI (merge into current draft)
 
 ## AI-Powered Features (Requires Prism)
 

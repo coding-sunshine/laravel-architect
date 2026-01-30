@@ -211,6 +211,7 @@ export default function ArchitectStudio({
     const [aiLoading, setAiLoading] = useState(false);
     const [aiError, setAiError] = useState<string | null>(null);
     const [proposedYaml, setProposedYaml] = useState<string | null>(null);
+    const [simpleSummary, setSimpleSummary] = useState<{ models: number; actions: number; pages: number } | null>(null);
 
     // AI Assistant Chat state
     const [aiChatOpen, setAiChatOpen] = useState(false);
@@ -225,6 +226,10 @@ export default function ArchitectStudio({
     const [importConfirmOpen, setImportConfirmOpen] = useState(false);
     const [importedYaml, setImportedYaml] = useState<string | null>(null);
     const [importLoading, setImportLoading] = useState(false);
+
+    const [wizardOpen, setWizardOpen] = useState<'addModel' | 'addCrud' | 'addRelationship' | 'addPage' | null>(null);
+    const [wizardLoading, setWizardLoading] = useState(false);
+    const [wizardForm, setWizardForm] = useState<Record<string, string | boolean>>({});
 
     const [paletteOpen, setPaletteOpen] = useState(false);
     const [showYamlSplit, setShowYamlSplit] = useState(false);
@@ -479,6 +484,7 @@ export default function ArchitectStudio({
         setAiLoading(true);
         setAiError(null);
         setProposedYaml(null);
+        setSimpleSummary(null);
         const { ok, data } = await apiFetch('/architect/api/draft-from-ai', {
             method: 'POST',
             body: JSON.stringify({ description: desc }),
@@ -487,6 +493,27 @@ export default function ArchitectStudio({
         const result = data as { yaml?: string; error?: string };
         if (ok && result.yaml) {
             setProposedYaml(result.yaml);
+        } else {
+            setAiError(result.error ?? 'Failed to generate draft.');
+        }
+    }, [apiFetch, aiDescription]);
+
+    const handleSimpleGenerate = useCallback(async () => {
+        const desc = aiDescription.trim();
+        if (!desc) return;
+        setAiLoading(true);
+        setAiError(null);
+        setProposedYaml(null);
+        setSimpleSummary(null);
+        const { ok, data } = await apiFetch('/architect/api/simple-generate', {
+            method: 'POST',
+            body: JSON.stringify({ description: desc }),
+        });
+        setAiLoading(false);
+        const result = data as { summary?: { models: number; actions: number; pages: number }; yaml?: string; error?: string };
+        if (ok && result.yaml && result.summary) {
+            setProposedYaml(result.yaml);
+            setSimpleSummary(result.summary);
         } else {
             setAiError(result.error ?? 'Failed to generate draft.');
         }
@@ -547,6 +574,7 @@ export default function ArchitectStudio({
         (action: 'apply' | 'edit' | 'discard') => {
             if (action === 'discard') {
                 setProposedYaml(null);
+                setSimpleSummary(null);
                 setAiDescription('');
                 setAiPanelOpen(false);
                 return;
@@ -555,6 +583,7 @@ export default function ArchitectStudio({
             const yamlToSave = proposedYaml;
             setDraftYaml(yamlToSave);
             setProposedYaml(null);
+            setSimpleSummary(null);
             setAiDescription('');
             setAiPanelOpen(false);
             if (action === 'apply') {
@@ -1043,6 +1072,27 @@ export default function ArchitectStudio({
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </div>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm" className="hidden md:inline-flex">
+                                    New feature
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => { setWizardOpen('addModel'); setWizardForm({}); }}>
+                                    Add model
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { setWizardOpen('addCrud'); setWizardForm({}); }}>
+                                    Add CRUD resource
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { setWizardOpen('addRelationship'); setWizardForm({}); }}>
+                                    Add relationship
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { setWizardOpen('addPage'); setWizardForm({}); }}>
+                                    Add page
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                         {ai_enabled && (
                             <>
                                 <Button
@@ -1701,6 +1751,11 @@ export default function ArchitectStudio({
                             </>
                         ) : (
                             <div className="flex flex-1 flex-col gap-2">
+                                {simpleSummary && (
+                                    <p className="text-sm text-muted-foreground">
+                                        {simpleSummary.models} model(s), {simpleSummary.actions} action(s), {simpleSummary.pages} page(s)
+                                    </p>
+                                )}
                                 <Label>Proposed draft</Label>
                                 <pre className="max-h-[280px] flex-1 overflow-auto rounded-md border border-sidebar-border bg-muted/50 p-3 text-xs">
                                     {proposedYaml}
@@ -1719,6 +1774,13 @@ export default function ArchitectStudio({
                                     }}
                                 >
                                     Cancel
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={handleSimpleGenerate}
+                                    disabled={aiLoading || !aiDescription.trim()}
+                                >
+                                    {aiLoading ? 'Generating…' : 'Simple'}
                                 </Button>
                                 <Button
                                     onClick={handleAiSubmit}
@@ -1892,6 +1954,165 @@ export default function ArchitectStudio({
                             Merge
                         </Button>
                         <Button onClick={() => confirmImport(true)}>Replace draft</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={wizardOpen !== null} onOpenChange={(open) => !open && setWizardOpen(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            {wizardOpen === 'addModel' && 'Add model'}
+                            {wizardOpen === 'addCrud' && 'Add CRUD resource'}
+                            {wizardOpen === 'addRelationship' && 'Add relationship'}
+                            {wizardOpen === 'addPage' && 'Add page'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {wizardOpen === 'addModel' && 'Add a new model to the draft. Optionally infer columns from the database.'}
+                            {wizardOpen === 'addCrud' && 'Add full CRUD (actions, pages, routes) for an existing model.'}
+                            {wizardOpen === 'addRelationship' && 'Add a relationship between two models.'}
+                            {wizardOpen === 'addPage' && 'Add a page to the draft.'}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex flex-col gap-4 py-2">
+                        {wizardOpen === 'addModel' && (
+                            <>
+                                <div className="space-y-2">
+                                    <Label>Model name</Label>
+                                    <Input
+                                        value={(wizardForm.name as string) ?? ''}
+                                        onChange={(e) => setWizardForm((f) => ({ ...f, name: e.target.value }))}
+                                        placeholder="e.g. Post"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Table (optional)</Label>
+                                    <Input
+                                        value={(wizardForm.table as string) ?? ''}
+                                        onChange={(e) => setWizardForm((f) => ({ ...f, table: e.target.value }))}
+                                        placeholder="e.g. posts"
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="checkbox"
+                                        id="wizard-infer"
+                                        checked={!!wizardForm.infer_from_db}
+                                        onChange={(e) => setWizardForm((f) => ({ ...f, infer_from_db: e.target.checked }))}
+                                    />
+                                    <Label htmlFor="wizard-infer">Infer columns from database</Label>
+                                </div>
+                            </>
+                        )}
+                        {wizardOpen === 'addCrud' && (
+                            <div className="space-y-2">
+                                <Label>Model name</Label>
+                                <Input
+                                    value={(wizardForm.model_name as string) ?? ''}
+                                    onChange={(e) => setWizardForm((f) => ({ ...f, model_name: e.target.value }))}
+                                    placeholder="e.g. Post"
+                                />
+                            </div>
+                        )}
+                        {wizardOpen === 'addRelationship' && (
+                            <>
+                                <div className="space-y-2">
+                                    <Label>From model</Label>
+                                    <Input
+                                        value={(wizardForm.from_model as string) ?? ''}
+                                        onChange={(e) => setWizardForm((f) => ({ ...f, from_model: e.target.value }))}
+                                        placeholder="e.g. Comment"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Type</Label>
+                                    <select
+                                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                        value={(wizardForm.type as string) ?? 'belongsTo'}
+                                        onChange={(e) => setWizardForm((f) => ({ ...f, type: e.target.value }))}
+                                    >
+                                        <option value="belongsTo">belongsTo</option>
+                                        <option value="hasMany">hasMany</option>
+                                        <option value="hasOne">hasOne</option>
+                                        <option value="belongsToMany">belongsToMany</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>To model</Label>
+                                    <Input
+                                        value={(wizardForm.to_model as string) ?? ''}
+                                        onChange={(e) => setWizardForm((f) => ({ ...f, to_model: e.target.value }))}
+                                        placeholder="e.g. Post"
+                                    />
+                                </div>
+                            </>
+                        )}
+                        {wizardOpen === 'addPage' && (
+                            <>
+                                <div className="space-y-2">
+                                    <Label>Page name</Label>
+                                    <Input
+                                        value={(wizardForm.name as string) ?? ''}
+                                        onChange={(e) => setWizardForm((f) => ({ ...f, name: e.target.value }))}
+                                        placeholder="e.g. Dashboard"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Type</Label>
+                                    <select
+                                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                        value={(wizardForm.type as string) ?? 'index'}
+                                        onChange={(e) => setWizardForm((f) => ({ ...f, type: e.target.value }))}
+                                    >
+                                        <option value="index">index</option>
+                                        <option value="show">show</option>
+                                        <option value="create">create</option>
+                                        <option value="edit">edit</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Model (optional)</Label>
+                                    <Input
+                                        value={(wizardForm.model as string) ?? ''}
+                                        onChange={(e) => setWizardForm((f) => ({ ...f, model: e.target.value }))}
+                                        placeholder="e.g. Post"
+                                    />
+                                </div>
+                            </>
+                        )}
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setWizardOpen(null)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            disabled={wizardLoading}
+                            onClick={async () => {
+                                if (!wizardOpen) return;
+                                const endpoint =
+                                    wizardOpen === 'addModel'
+                                        ? '/architect/api/wizard/add-model'
+                                        : wizardOpen === 'addCrud'
+                                          ? '/architect/api/wizard/add-crud-resource'
+                                          : wizardOpen === 'addRelationship'
+                                            ? '/architect/api/wizard/add-relationship'
+                                            : '/architect/api/wizard/add-page';
+                                const body: Record<string, unknown> = { ...wizardForm, yaml: draftYaml };
+                                setWizardLoading(true);
+                                const { ok, data } = await apiFetch(endpoint, {
+                                    method: 'POST',
+                                    body: JSON.stringify(body),
+                                });
+                                setWizardLoading(false);
+                                const result = data as { yaml?: string; error?: string };
+                                if (ok && result.yaml) {
+                                    setDraftYaml(result.yaml);
+                                    setWizardOpen(null);
+                                }
+                            }}
+                        >
+                            {wizardLoading ? 'Applying…' : 'Apply'}
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

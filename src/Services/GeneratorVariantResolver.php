@@ -74,9 +74,21 @@ final class GeneratorVariantResolver
 
     public const BROADCAST_NONE = 'none';
 
+    /**
+     * CRUD/table generation variants.
+     */
+    public const CRUD_POWER_GRID = 'power_grid';
+
+    public const CRUD_INERTIA_TABLES = 'inertia_tables';
+
+    public const CRUD_FILAMENT_RESOURCE = 'filament_resource';
+
+    public const CRUD_PLAIN = 'plain';
+
     public function __construct(
         private readonly PackageDiscovery $packageDiscovery,
         private readonly StackDetector $stackDetector,
+        private readonly CrudStackResolver $crudStackResolver,
     ) {}
 
     /**
@@ -84,6 +96,7 @@ final class GeneratorVariantResolver
      *
      * @return array{
      *     stack: string,
+     *     crud_variant: string,
      *     api_auth: string,
      *     test_framework: string,
      *     admin_panel: string,
@@ -96,6 +109,7 @@ final class GeneratorVariantResolver
     {
         return [
             'stack' => $this->resolveStack(),
+            'crud_variant' => $this->resolveCrudVariant(),
             'api_auth' => $this->resolveApiAuth(),
             'test_framework' => $this->resolveTestFramework(),
             'admin_panel' => $this->resolveAdminPanel(),
@@ -103,6 +117,14 @@ final class GeneratorVariantResolver
             'broadcasting' => $this->resolveBroadcasting(),
             'features' => $this->resolveFeatures(),
         ];
+    }
+
+    /**
+     * Resolve the CRUD/table generation variant (power_grid, inertia_tables, filament_resource, plain).
+     */
+    public function resolveCrudVariant(?string $scope = null): string
+    {
+        return $this->crudStackResolver->resolve($scope);
     }
 
     /**

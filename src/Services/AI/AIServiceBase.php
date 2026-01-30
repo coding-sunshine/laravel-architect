@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace CodingSunshine\Architect\Services\AI;
 
-use Prism\Prism\Enums\Provider;
 use Prism\Prism\Facades\Prism;
 use Prism\Prism\Schema\ArraySchema;
 use Prism\Prism\Schema\BooleanSchema;
@@ -18,6 +17,31 @@ use Prism\Prism\Schema\StringSchema;
  */
 abstract class AIServiceBase
 {
+    /**
+     * Prepend default "check packages first" instructions to a system prompt.
+     */
+    protected function prependDefaultInstructions(string $systemPrompt): string
+    {
+        return DefaultAIPrompt::get()."\n\n".$systemPrompt;
+    }
+
+    /**
+     * Append fingerprint context to a user prompt when provided.
+     *
+     * @param  array<string, mixed>|null  $fingerprint
+     */
+    protected function appendFingerprintContext(string $userPrompt, ?array $fingerprint): string
+    {
+        if ($fingerprint === null || $fingerprint === []) {
+            return $userPrompt;
+        }
+
+        return "Current app context (use this instead of full codebase; check packages first for the use case):\n"
+            .json_encode($fingerprint, JSON_PRETTY_PRINT)
+            ."\n\n"
+            .$userPrompt;
+    }
+
     /**
      * Check if AI services are available.
      */

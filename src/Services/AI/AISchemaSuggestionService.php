@@ -28,6 +28,7 @@ final class AISchemaSuggestionService extends AIServiceBase
     /**
      * Analyze a draft and return comprehensive suggestions.
      *
+     * @param  array<string, mixed>|null  $fingerprint  Optional app fingerprint from AppModelService
      * @return array{
      *     field_suggestions: array<string, array<array{field: string, type: string, reason: string}>>,
      *     relationship_suggestions: array<string, array<array{type: string, target: string, reason: string}>>,
@@ -38,7 +39,7 @@ final class AISchemaSuggestionService extends AIServiceBase
      *     naming_improvements: array<string, array{current: string, suggested: string, reason: string}>,
      * }|null
      */
-    public function analyzeDraft(Draft $draft): ?array
+    public function analyzeDraft(Draft $draft, ?array $fingerprint = null): ?array
     {
         if (! $this->isAvailable()) {
             return null;
@@ -46,8 +47,8 @@ final class AISchemaSuggestionService extends AIServiceBase
 
         $installed = $this->packageDiscovery->installed();
 
-        $systemPrompt = $this->getAnalysisSystemPrompt();
-        $userPrompt = $this->buildAnalysisPrompt($draft, $installed);
+        $systemPrompt = $this->prependDefaultInstructions($this->getAnalysisSystemPrompt());
+        $userPrompt = $this->appendFingerprintContext($this->buildAnalysisPrompt($draft, $installed), $fingerprint);
         $schema = $this->createSuggestionSchema();
 
         return $this->generateStructured($systemPrompt, $userPrompt, $schema);
@@ -56,18 +57,19 @@ final class AISchemaSuggestionService extends AIServiceBase
     /**
      * Suggest fields for a specific model based on its name and context.
      *
+     * @param  array<string, mixed>|null  $fingerprint  Optional app fingerprint from AppModelService
      * @return array<array{field: string, type: string, reason: string}>|null
      */
-    public function suggestFieldsForModel(string $modelName, array $existingFields = []): ?array
+    public function suggestFieldsForModel(string $modelName, array $existingFields = [], ?array $fingerprint = null): ?array
     {
         if (! $this->isAvailable()) {
             return null;
         }
 
-        $systemPrompt = <<<'PROMPT'
+        $systemPrompt = $this->prependDefaultInstructions(<<<'PROMPT'
 You are a Laravel expert. Suggest database fields for models based on their name and common patterns.
 Return only fields that are commonly needed. Be practical and follow Laravel conventions.
-PROMPT;
+PROMPT);
 
         $userPrompt = "Suggest database fields for a model named '{$modelName}'.\n\n";
 
@@ -84,6 +86,8 @@ Return a JSON array of objects with:
 
 Focus on practical, commonly-used fields. Don't suggest id, created_at, updated_at as they're automatic.
 PROMPT;
+
+        $userPrompt = $this->appendFingerprintContext($userPrompt, $fingerprint);
 
         $schema = new ArraySchema(
             'field_suggestions',
@@ -114,18 +118,19 @@ PROMPT;
      * Suggest relationships for a model based on context.
      *
      * @param  array<string>  $otherModels
+     * @param  array<string, mixed>|null  $fingerprint  Optional app fingerprint from AppModelService
      * @return array<array{type: string, target: string, reason: string}>|null
      */
-    public function suggestRelationships(string $modelName, array $existingRelationships, array $otherModels): ?array
+    public function suggestRelationships(string $modelName, array $existingRelationships, array $otherModels, ?array $fingerprint = null): ?array
     {
         if (! $this->isAvailable()) {
             return null;
         }
 
-        $systemPrompt = <<<'PROMPT'
+        $systemPrompt = $this->prependDefaultInstructions(<<<'PROMPT'
 You are a Laravel expert. Suggest Eloquent relationships for models based on naming conventions and common patterns.
 Consider the other models in the application and suggest relationships that make sense.
-PROMPT;
+PROMPT);
 
         $userPrompt = "Suggest relationships for model '{$modelName}'.\n\n";
         $userPrompt .= 'Other models in the app: '.implode(', ', $otherModels)."\n\n";
@@ -142,6 +147,8 @@ Return a JSON array of objects with:
 
 Focus on relationships that make semantic sense. Don't suggest relationships that already exist.
 PROMPT;
+
+        $userPrompt = $this->appendFingerprintContext($userPrompt, $fingerprint);
 
         $schema = new ArraySchema(
             'relationship_suggestions',
@@ -175,16 +182,16 @@ PROMPT;
      * @param  array<string, string>  $installedPackages
      * @return array<array{feature: string, package: string, reason: string}>|null
      */
-    public function suggestPackageFeatures(string $modelName, array $modelDef, array $installedPackages): ?array
+    public function suggestPackageFeatures(string $modelName, array $modelDef, array $installedPackages, ?array $fingerprint = null): ?array
     {
         if (! $this->isAvailable()) {
             return null;
         }
 
-        $systemPrompt = <<<'PROMPT'
+        $systemPrompt = $this->prependDefaultInstructions(<<<'PROMPT'
 You are a Laravel expert. Based on a model's structure and the packages installed in the application,
 suggest package features that would benefit the model. Only suggest features from packages that are actually installed.
-PROMPT;
+PROMPT);
 
         $fields = array_keys(array_filter($modelDef, fn ($v) => is_string($v)));
         $packages = array_keys($installedPackages);
@@ -199,6 +206,8 @@ Suggest package features using this JSON format:
 
 Only suggest features that make semantic sense for this model type.
 PROMPT;
+
+        $userPrompt = $this->appendFingerprintContext($userPrompt, $fingerprint);
 
         $schema = new ArraySchema(
             'feature_suggestions',
@@ -228,9 +237,10 @@ PROMPT;
     /**
      * Detect missing models that should exist based on relationships.
      *
+     * @param  array<string, mixed>|null  $fingerprint  Optional app fingerprint from AppModelService
      * @return array<array{name: string, reason: string, suggested_fields: array<string>}>|null
      */
-    public function detectMissingModels(Draft $draft): ?array
+    public function detectMissingModels(Draft $draft, ?array $fingerprint = null): ?array
     {
         if (! $this->isAvailable()) {
             return null;
@@ -274,10 +284,10 @@ PROMPT;
             return [];
         }
 
-        $systemPrompt = <<<'PROMPT'
+        $systemPrompt = $this->prependDefaultInstructions(<<<'PROMPT'
 You are a Laravel expert. For each missing model, suggest basic fields that would typically be needed.
 Consider the context of how the model is referenced in relationships.
-PROMPT;
+PROMPT);
 
         $userPrompt = "These models are referenced but don't exist: ".implode(', ', $missingModels)."\n\n";
         $userPrompt .= 'Existing models: '.implode(', ', $existingModels)."\n\n";
@@ -287,6 +297,8 @@ For each missing model, return:
 - reason: why it should exist
 - suggested_fields: array of field names that would typically be needed
 PROMPT;
+
+        $userPrompt = $this->appendFingerprintContext($userPrompt, $fingerprint);
 
         $schema = new ArraySchema(
             'missing_models',

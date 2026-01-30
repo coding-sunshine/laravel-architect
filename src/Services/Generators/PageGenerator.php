@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace CodingSunshine\Architect\Services\Generators;
 
 use CodingSunshine\Architect\Contracts\GeneratorInterface;
+use CodingSunshine\Architect\Services\GeneratorVariantResolver;
 use CodingSunshine\Architect\Services\StackDetector;
 use CodingSunshine\Architect\Support\BuildResult;
 use CodingSunshine\Architect\Support\Draft;
@@ -18,18 +19,20 @@ final class PageGenerator implements GeneratorInterface
     private const RESOURCE_VIEWS = ['index', 'create', 'show', 'edit'];
 
     public function __construct(
-        private readonly StackDetector $stackDetector
+        private readonly StackDetector $stackDetector,
+        private readonly GeneratorVariantResolver $variantResolver,
     ) {}
 
     public function generate(Draft $draft, string $draftPath): BuildResult
     {
         $stack = $this->resolveStack();
+        $crudVariant = $this->variantResolver->resolveCrudVariant();
         $generated = [];
 
         foreach (array_keys($draft->pages) as $pageKey) {
             $slug = Str::kebab($pageKey);
             foreach (self::RESOURCE_VIEWS as $view) {
-                $artifacts = $this->generateForStack($stack, $pageKey, $slug, $view);
+                $artifacts = $this->generateForStack($stack, $crudVariant, $pageKey, $slug, $view);
                 foreach ($artifacts as $path => $content) {
                     File::ensureDirectoryExists(dirname($path));
                     File::put($path, $content);
@@ -63,13 +66,26 @@ final class PageGenerator implements GeneratorInterface
     /**
      * @return array<string, string> path => content
      */
-    private function generateForStack(string $stack, string $pageKey, string $slug, string $view): array
+    private function generateForStack(string $stack, string $crudVariant, string $pageKey, string $slug, string $view): array
     {
+        $usePowerGrid = $crudVariant === GeneratorVariantResolver::CRUD_POWER_GRID && $view === 'index';
+        $useInertiaTables = $crudVariant === GeneratorVariantResolver::CRUD_INERTIA_TABLES && $view === 'index';
+
         return match ($stack) {
-            'inertia-react' => [$this->inertiaReactPath($slug, $view) => $this->renderInertiaReact($pageKey, $slug, $view)],
-            'inertia-vue' => [$this->inertiaVuePath($slug, $view) => $this->renderInertiaVue($pageKey, $slug, $view)],
-            'livewire' => $this->generateLivewire($pageKey, $slug, $view),
-            'volt' => [$this->voltPath($slug, $view) => $this->renderVolt($pageKey, $slug, $view)],
+            'inertia-react' => [
+                $this->inertiaReactPath($slug, $view) => $useInertiaTables
+                    ? $this->renderInertiaReactIndexWithTables($pageKey, $slug)
+                    : $this->renderInertiaReact($pageKey, $slug, $view),
+            ],
+            'inertia-vue' => [
+                $this->inertiaVuePath($slug, $view) => $useInertiaTables
+                    ? $this->renderInertiaVueIndexWithTables($pageKey, $slug)
+                    : $this->renderInertiaVue($pageKey, $slug, $view),
+            ],
+            'livewire' => $this->generateLivewire($pageKey, $slug, $view, $usePowerGrid),
+            'volt' => [
+                $this->voltPath($slug, $view) => $this->renderVolt($pageKey, $slug, $view),
+            ],
             default => [$this->bladePath($slug, $view) => $this->renderBlade($pageKey, $slug, $view)],
         };
     }
@@ -119,6 +135,29 @@ export default function {$componentName}() {
 TSX;
     }
 
+    private function renderInertiaReactIndexWithTables(string $pageKey, string $slug): string
+    {
+        $title = 'Index '.Str::title(str_replace('-', ' ', $slug));
+        $componentName = Str::studly(str_replace('-', ' ', $slug)).'Index';
+
+        return <<<TSX
+import { Head } from '@inertiajs/react';
+
+export default function {$componentName}() {
+    return (
+        <>
+            <Head title="{$title}" />
+            <div className="p-6">
+                <h1 className="text-xl font-semibold">{$title}</h1>
+                <p className="mt-2 text-muted-foreground">Data table (Inertia Tables). Wire your table component here.</p>
+            </div>
+        </>
+    );
+}
+
+TSX;
+    }
+
     private function renderInertiaVue(string $pageKey, string $slug, string $view): string
     {
         $title = Str::title($view).' '.Str::title(str_replace('-', ' ', $slug));
@@ -140,17 +179,37 @@ import { Head } from '@inertiajs/vue3';
 VUE;
     }
 
+    private function renderInertiaVueIndexWithTables(string $pageKey, string $slug): string
+    {
+        $title = 'Index '.Str::title(str_replace('-', ' ', $slug));
+
+        return <<<VUE
+<template>
+  <Head :title="'{$title}'" />
+  <div class="p-6">
+    <h1 class="text-xl font-semibold">{$title}</h1>
+    <p class="mt-2 text-muted-foreground">Data table (Inertia Tables). Wire your table component here.</p>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { Head } from '@inertiajs/vue3';
+</script>
+
+VUE;
+    }
+
     /**
      * @return array<string, string> path => content
      */
-    private function generateLivewire(string $pageKey, string $slug, string $view): array
+    private function generateLivewire(string $pageKey, string $slug, string $view, bool $usePowerGrid = false): array
     {
         $componentName = Str::studly("{$slug}-{$view}");
         $viewName = "{$slug}-{$view}";
         $classPath = app_path("Livewire/{$componentName}.php");
         $viewPath = resource_path("views/livewire/{$viewName}.blade.php");
-        $classContent = $this->renderLivewireClass($componentName, $viewName);
-        $viewContent = $this->renderLivewireView($pageKey, $slug, $view);
+        $classContent = $this->renderLivewireClass($componentName, $viewName, $usePowerGrid);
+        $viewContent = $this->renderLivewireView($pageKey, $slug, $view, $usePowerGrid);
 
         return [
             $classPath => $classContent,
@@ -158,8 +217,30 @@ VUE;
         ];
     }
 
-    private function renderLivewireClass(string $componentName, string $viewName): string
+    private function renderLivewireClass(string $componentName, string $viewName, bool $usePowerGrid = false): string
     {
+        if ($usePowerGrid) {
+            return <<<PHP
+<?php
+
+declare(strict_types=1);
+
+namespace App\Livewire;
+
+use Livewire\Component;
+
+/** Power Grid: extend PowerComponents\LivewirePowerGrid\PowerGridComponent and implement datasource/columns. */
+final class {$componentName} extends Component
+{
+    public function render(): string
+    {
+        return 'livewire.{$viewName}';
+    }
+}
+
+PHP;
+        }
+
         return <<<PHP
 <?php
 
@@ -180,9 +261,19 @@ final class {$componentName} extends Component
 PHP;
     }
 
-    private function renderLivewireView(string $pageKey, string $slug, string $view): string
+    private function renderLivewireView(string $pageKey, string $slug, string $view, bool $usePowerGrid = false): string
     {
         $title = Str::title($view).' '.Str::title(str_replace('-', ' ', $slug));
+
+        if ($usePowerGrid) {
+            return <<<BLADE
+<div>
+    <h1 class="text-xl font-semibold">{$title}</h1>
+    {{-- Power Grid: use <livewire:powergrid.table /> or your Power Grid table component --}}
+    <div class="mt-4">Wire your Power Grid table here.</div>
+</div>
+BLADE;
+        }
 
         return <<<BLADE
 <div>

@@ -53,6 +53,7 @@ return [
         'max_retries' => 2,
         'retry_with_feedback' => true,
         'max_context_tokens' => env('ARCHITECT_AI_MAX_CONTEXT_TOKENS'),
+        'default_instructions' => 'Before generating any code, check the application\'s installed packages and conventions (provided in context). For the requested use case (e.g. CRUD, data table, form, auth), prefer using an existing package (e.g. Filament, Power Grid, Inertia Tables, Breeze) if it fits. Only fall back to plain framework code when no suitable package is installed or applicable.',
     ],
 
     /*
@@ -237,4 +238,17 @@ return [
         //     'suggested_commands' => ['php artisan some:command'],
         // ],
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | CRUD / Table Packages
+    |--------------------------------------------------------------------------
+    |
+    | Package names that provide table/CRUD UI. Used by CrudStackResolver to
+    | pick power_grid, inertia_tables, or plain. Keys are Composer package
+    | names; values are: power_grid, inertia_tables, or filament_resource.
+    | Built-in: power-grid/laravel-powergrid, protonemedia/inertiajs-tables-laravel, filament/filament.
+    |
+    */
+    'crud_packages' => [],
 ];

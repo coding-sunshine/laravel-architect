@@ -26,18 +26,19 @@ final class AICodeGenerator extends AIServiceBase
      * Generate package integration code for a model.
      *
      * @param  array<string, mixed>  $modelDef
+     * @param  array<string, mixed>|null  $fingerprint  Optional app fingerprint from AppModelService
      */
-    public function generatePackageIntegration(string $modelName, array $modelDef, string $packageName): ?string
+    public function generatePackageIntegration(string $modelName, array $modelDef, string $packageName, ?array $fingerprint = null): ?string
     {
         if (! $this->isAvailable()) {
             return null;
         }
 
-        $systemPrompt = <<<'PROMPT'
+        $systemPrompt = $this->prependDefaultInstructions(<<<'PROMPT'
 You are a Laravel expert. Generate the PHP code needed to integrate a package into a model.
 Return only the code (traits, interfaces, methods) that needs to be added, with proper namespaces.
 Do not include the full class, just the additions. Use proper Laravel conventions.
-PROMPT;
+PROMPT);
 
         $userPrompt = "Generate code to integrate '{$packageName}' into model '{$modelName}'.\n\n";
         $userPrompt .= 'Model definition: '.json_encode($modelDef, JSON_PRETTY_PRINT)."\n\n";
@@ -51,15 +52,16 @@ Return PHP code including:
 Format as valid PHP that can be inserted into a class.
 PROMPT;
 
-        return $this->generateText($systemPrompt, $userPrompt);
+        return $this->generateText($systemPrompt, $this->appendFingerprintContext($userPrompt, $fingerprint));
     }
 
     /**
      * Generate migration columns for a model with package awareness.
      *
      * @param  array<string, mixed>  $modelDef
+     * @param  array<string, mixed>|null  $fingerprint  Optional app fingerprint from AppModelService
      */
-    public function generateMigrationColumns(string $modelName, array $modelDef): ?string
+    public function generateMigrationColumns(string $modelName, array $modelDef, ?array $fingerprint = null): ?string
     {
         if (! $this->isAvailable()) {
             return null;
@@ -67,12 +69,12 @@ PROMPT;
 
         $installed = $this->packageDiscovery->installed();
 
-        $systemPrompt = <<<'PROMPT'
+        $systemPrompt = $this->prependDefaultInstructions(<<<'PROMPT'
 You are a Laravel expert. Generate migration column definitions for a model.
 Consider the installed packages and add any columns they require.
 Use proper Laravel migration syntax with methods like $table->string(), $table->foreignId(), etc.
 Include indexes where appropriate.
-PROMPT;
+PROMPT);
 
         $userPrompt = "Generate migration columns for model '{$modelName}'.\n\n";
         $userPrompt .= 'Model definition: '.json_encode($modelDef, JSON_PRETTY_PRINT)."\n\n";
@@ -88,25 +90,26 @@ Return PHP code for Schema::create callback including:
 Format as the body of Schema::create callback (no function wrapper).
 PROMPT;
 
-        return $this->generateText($systemPrompt, $userPrompt);
+        return $this->generateText($systemPrompt, $this->appendFingerprintContext($userPrompt, $fingerprint));
     }
 
     /**
      * Generate factory definition with realistic data.
      *
      * @param  array<string, mixed>  $modelDef
+     * @param  array<string, mixed>|null  $fingerprint  Optional app fingerprint from AppModelService
      */
-    public function generateFactory(string $modelName, array $modelDef): ?string
+    public function generateFactory(string $modelName, array $modelDef, ?array $fingerprint = null): ?string
     {
         if (! $this->isAvailable()) {
             return null;
         }
 
-        $systemPrompt = <<<'PROMPT'
+        $systemPrompt = $this->prependDefaultInstructions(<<<'PROMPT'
 You are a Laravel expert. Generate a factory definition that produces realistic, contextual data.
 Use Faker methods appropriate to each field type. Consider the model's semantic meaning.
 For example, a Product model should have realistic product names, not random strings.
-PROMPT;
+PROMPT);
 
         $userPrompt = "Generate factory definition for model '{$modelName}'.\n\n";
         $userPrompt .= 'Model fields: '.json_encode($modelDef, JSON_PRETTY_PRINT)."\n\n";
@@ -122,15 +125,16 @@ Use appropriate Faker methods like:
 Make the data realistic for the model type.
 PROMPT;
 
-        return $this->generateText($systemPrompt, $userPrompt);
+        return $this->generateText($systemPrompt, $this->appendFingerprintContext($userPrompt, $fingerprint));
     }
 
     /**
      * Generate factory states based on installed packages.
      *
      * @param  array<string, mixed>  $modelDef
+     * @param  array<string, mixed>|null  $fingerprint  Optional app fingerprint from AppModelService
      */
-    public function generateFactoryStates(string $modelName, array $modelDef): ?string
+    public function generateFactoryStates(string $modelName, array $modelDef, ?array $fingerprint = null): ?string
     {
         if (! $this->isAvailable()) {
             return null;
@@ -138,11 +142,11 @@ PROMPT;
 
         $installed = $this->packageDiscovery->installed();
 
-        $systemPrompt = <<<'PROMPT'
+        $systemPrompt = $this->prependDefaultInstructions(<<<'PROMPT'
 You are a Laravel expert. Generate factory states that are useful for testing.
 Consider the installed packages and create states that leverage their features.
 For example, if spatie/laravel-permission is installed, create admin/moderator states.
-PROMPT;
+PROMPT);
 
         $userPrompt = "Generate factory states for model '{$modelName}'.\n\n";
         $userPrompt .= 'Model fields: '.json_encode($modelDef, JSON_PRETTY_PRINT)."\n\n";
@@ -156,25 +160,26 @@ public function withMedia(): static { return $this->afterCreating(...); }
 Only include states that make sense for this model type.
 PROMPT;
 
-        return $this->generateText($systemPrompt, $userPrompt);
+        return $this->generateText($systemPrompt, $this->appendFingerprintContext($userPrompt, $fingerprint));
     }
 
     /**
      * Generate seeder with meaningful data.
      *
      * @param  array<string, mixed>  $modelDef
+     * @param  array<string, mixed>|null  $fingerprint  Optional app fingerprint from AppModelService
      */
-    public function generateSeeder(string $modelName, array $modelDef, int $count = 10): ?string
+    public function generateSeeder(string $modelName, array $modelDef, int $count = 10, ?array $fingerprint = null): ?string
     {
         if (! $this->isAvailable()) {
             return null;
         }
 
-        $systemPrompt = <<<'PROMPT'
+        $systemPrompt = $this->prependDefaultInstructions(<<<'PROMPT'
 You are a Laravel expert. Generate a seeder that creates meaningful, realistic data.
 Consider relationships and create data in the right order.
 Use factories with appropriate states. Include comments explaining the data strategy.
-PROMPT;
+PROMPT);
 
         $userPrompt = "Generate seeder for model '{$modelName}' with approximately {$count} records.\n\n";
         $userPrompt .= 'Model definition: '.json_encode($modelDef, JSON_PRETTY_PRINT)."\n\n";
@@ -188,15 +193,16 @@ Return the run() method body including:
 Use Laravel conventions and proper model namespaces.
 PROMPT;
 
-        return $this->generateText($systemPrompt, $userPrompt);
+        return $this->generateText($systemPrompt, $this->appendFingerprintContext($userPrompt, $fingerprint));
     }
 
     /**
      * Generate comprehensive test cases for a model.
      *
      * @param  array<string, mixed>  $modelDef
+     * @param  array<string, mixed>|null  $fingerprint  Optional app fingerprint from AppModelService
      */
-    public function generateTests(string $modelName, array $modelDef, string $framework = 'pest'): ?string
+    public function generateTests(string $modelName, array $modelDef, string $framework = 'pest', ?array $fingerprint = null): ?string
     {
         if (! $this->isAvailable()) {
             return null;
@@ -204,7 +210,7 @@ PROMPT;
 
         $installed = $this->packageDiscovery->installed();
 
-        $systemPrompt = <<<'PROMPT'
+        $systemPrompt = $this->prependDefaultInstructions(<<<'PROMPT'
 You are a Laravel testing expert. Generate comprehensive test cases that cover:
 1. Model creation and validation
 2. Relationships
@@ -213,7 +219,7 @@ You are a Laravel testing expert. Generate comprehensive test cases that cover:
 5. Edge cases and error handling
 
 Use the specified testing framework (Pest or PHPUnit).
-PROMPT;
+PROMPT);
 
         $userPrompt = "Generate tests for model '{$modelName}' using {$framework}.\n\n";
         $userPrompt .= 'Model definition: '.json_encode($modelDef, JSON_PRETTY_PRINT)."\n\n";
@@ -230,27 +236,28 @@ For Pest: Use it() syntax with closures
 For PHPUnit: Use test_ prefix methods in a class
 PROMPT;
 
-        return $this->generateText($systemPrompt, $userPrompt);
+        return $this->generateText($systemPrompt, $this->appendFingerprintContext($userPrompt, $fingerprint));
     }
 
     /**
      * Generate controller methods with proper responses.
      *
      * @param  array<string, mixed>  $modelDef
+     * @param  array<string, mixed>|null  $fingerprint  Optional app fingerprint from AppModelService
      */
-    public function generateControllerMethods(string $modelName, array $modelDef, string $stack = 'inertia-react'): ?string
+    public function generateControllerMethods(string $modelName, array $modelDef, string $stack = 'inertia-react', ?array $fingerprint = null): ?string
     {
         if (! $this->isAvailable()) {
             return null;
         }
 
-        $systemPrompt = <<<'PROMPT'
+        $systemPrompt = $this->prependDefaultInstructions(<<<'PROMPT'
 You are a Laravel expert. Generate controller methods that follow best practices:
 1. Use actions for business logic (not inline in controllers)
 2. Return appropriate responses for the stack (Inertia, API, etc.)
 3. Handle authorization
 4. Include proper type hints and return types
-PROMPT;
+PROMPT);
 
         $userPrompt = "Generate controller methods for model '{$modelName}' using {$stack} stack.\n\n";
         $userPrompt .= 'Model definition: '.json_encode($modelDef, JSON_PRETTY_PRINT)."\n\n";
@@ -267,27 +274,28 @@ Return PHP methods for:
 Use thin controllers that delegate to Actions.
 PROMPT;
 
-        return $this->generateText($systemPrompt, $userPrompt);
+        return $this->generateText($systemPrompt, $this->appendFingerprintContext($userPrompt, $fingerprint));
     }
 
     /**
      * Generate Form Request validation rules.
      *
      * @param  array<string, mixed>  $modelDef
+     * @param  array<string, mixed>|null  $fingerprint  Optional app fingerprint from AppModelService
      */
-    public function generateFormRequest(string $modelName, array $modelDef, string $action = 'store'): ?string
+    public function generateFormRequest(string $modelName, array $modelDef, string $action = 'store', ?array $fingerprint = null): ?string
     {
         if (! $this->isAvailable()) {
             return null;
         }
 
-        $systemPrompt = <<<'PROMPT'
+        $systemPrompt = $this->prependDefaultInstructions(<<<'PROMPT'
 You are a Laravel validation expert. Generate Form Request rules that are:
 1. Comprehensive but not excessive
 2. Using the correct rule syntax for Laravel 12
 3. Including custom error messages
 4. Considering the action type (store vs update)
-PROMPT;
+PROMPT);
 
         $userPrompt = "Generate {$action} Form Request for model '{$modelName}'.\n\n";
         $userPrompt .= 'Model fields: '.json_encode($modelDef, JSON_PRETTY_PRINT)."\n\n";
@@ -301,15 +309,16 @@ Return a complete Form Request class including:
 For update requests, make unique rules ignore the current record.
 PROMPT;
 
-        return $this->generateText($systemPrompt, $userPrompt);
+        return $this->generateText($systemPrompt, $this->appendFingerprintContext($userPrompt, $fingerprint));
     }
 
     /**
      * Generate Policy methods.
      *
      * @param  array<string, mixed>  $modelDef
+     * @param  array<string, mixed>|null  $fingerprint  Optional app fingerprint from AppModelService
      */
-    public function generatePolicy(string $modelName, array $modelDef): ?string
+    public function generatePolicy(string $modelName, array $modelDef, ?array $fingerprint = null): ?string
     {
         if (! $this->isAvailable()) {
             return null;
@@ -318,13 +327,13 @@ PROMPT;
         $installed = $this->packageDiscovery->installed();
         $hasPermissions = isset($installed['spatie/laravel-permission']);
 
-        $systemPrompt = <<<'PROMPT'
+        $systemPrompt = $this->prependDefaultInstructions(<<<'PROMPT'
 You are a Laravel authorization expert. Generate Policy methods that:
 1. Cover all standard CRUD operations
 2. Consider ownership (user can edit their own resources)
 3. Use role/permission checks if Spatie Permission is available
 4. Include sensible defaults
-PROMPT;
+PROMPT);
 
         $userPrompt = "Generate Policy for model '{$modelName}'.\n\n";
         $userPrompt .= 'Model definition: '.json_encode($modelDef, JSON_PRETTY_PRINT)."\n\n";
@@ -342,6 +351,6 @@ Return a complete Policy class including:
 Use proper type hints and return types.
 PROMPT;
 
-        return $this->generateText($systemPrompt, $userPrompt);
+        return $this->generateText($systemPrompt, $this->appendFingerprintContext($userPrompt, $fingerprint));
     }
 }

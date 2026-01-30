@@ -44,9 +44,6 @@ final class ImportService
 
         foreach ($files as $file) {
             $name = basename($file, '.php');
-            if ($name === 'User' && ! in_array('User', $modelFilter ?? [], true)) {
-                continue;
-            }
             if ($modelFilter !== null && ! in_array($name, $modelFilter, true)) {
                 continue;
             }

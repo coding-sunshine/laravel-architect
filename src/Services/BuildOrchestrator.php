@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace CodingSunshine\Architect\Services;
 
 use CodingSunshine\Architect\Support\BuildResult;
-use CodingSunshine\Architect\Support\Draft;
-use CodingSunshine\Architect\Support\HashComputer;
 use Illuminate\Support\Facades\File;
 
 final class BuildOrchestrator
@@ -42,6 +40,7 @@ final class BuildOrchestrator
         foreach ($generators as $name => $generator) {
             if (! $generator->supports($draft)) {
                 $skipped[] = $name;
+
                 continue;
             }
 
@@ -56,7 +55,7 @@ final class BuildOrchestrator
                 $warnings = array_merge($warnings, $result->warnings);
                 $errors = array_merge($errors, $result->errors);
             } catch (\Throwable $e) {
-                $errors[] = "{$name}: " . $e->getMessage();
+                $errors[] = "{$name}: ".$e->getMessage();
             }
         }
 
@@ -92,8 +91,9 @@ final class BuildOrchestrator
         foreach ($backup as $path => $content) {
             $fullPath = str_starts_with($path, '/') ? $path : base_path($path);
             $resolved = realpath(dirname($fullPath)) ?: dirname($fullPath);
-            if ($resolved === false || ! str_starts_with($resolved . DIRECTORY_SEPARATOR, $base . DIRECTORY_SEPARATOR)) {
+            if ($resolved === false || ! str_starts_with($resolved.DIRECTORY_SEPARATOR, $base.DIRECTORY_SEPARATOR)) {
                 $errors[] = "Invalid path: {$path}";
+
                 continue;
             }
             try {
@@ -101,7 +101,7 @@ final class BuildOrchestrator
                 File::put($fullPath, $content);
                 $restored[] = $path;
             } catch (\Throwable $e) {
-                $errors[] = "{$path}: " . $e->getMessage();
+                $errors[] = "{$path}: ".$e->getMessage();
             }
         }
 

@@ -29,6 +29,7 @@ final class DraftNormalizer
         foreach ($models as $name => $def) {
             if (! is_array($def)) {
                 $out[$name] = $def;
+
                 continue;
             }
             $normalized = $this->expandColumnShorthands($def);
@@ -53,15 +54,18 @@ final class DraftNormalizer
                 }
                 if (Str::lower($col) === 'id') {
                     $expanded['id'] = 'bigIncrements';
+
                     continue;
                 }
                 if (Str::lower($col) === 'timestamps') {
                     $expanded['created_at'] = 'timestamp nullable';
                     $expanded['updated_at'] = 'timestamp nullable';
+
                     continue;
                 }
                 if (Str::lower($col) === 'softdeletes') {
                     $expanded['deleted_at'] = 'timestamp nullable';
+
                     continue;
                 }
                 $expanded[$col] = $this->columnTypeInferrer->inferFromColumnName($col);
@@ -120,7 +124,7 @@ final class DraftNormalizer
             $parts = explode(':', $item);
             $relatedModel = trim($parts[0]);
             $method = isset($parts[1]) ? trim($parts[1]) : Str::camel($relatedModel);
-            $fkColumn = Str::snake($method) . '_id';
+            $fkColumn = Str::snake($method).'_id';
             if ($relatedModel === '' || $fkColumn === '_id') {
                 continue;
             }

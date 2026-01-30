@@ -23,24 +23,24 @@ final class BuildPlanner
         foreach ($draft->modelNames() as $modelName) {
             $steps[] = [
                 'type' => 'artisan',
-                'name' => 'model:' . $modelName,
+                'name' => 'model:'.$modelName,
                 'description' => "Run make:model {$modelName} -m -f",
                 'command' => "make:model {$modelName} -m -f",
-                'path_hint' => $basePath . '/Models/' . $modelName . '.php',
+                'path_hint' => $basePath.'/Models/'.$modelName.'.php',
             ];
             $steps[] = [
                 'type' => 'generate',
-                'name' => 'patch_model:' . $modelName,
-                'description' => "Patch model fillable/casts from draft",
+                'name' => 'patch_model:'.$modelName,
+                'description' => 'Patch model fillable/casts from draft',
                 'generator' => 'model',
-                'path_hint' => $basePath . '/Models/' . $modelName . '.php',
+                'path_hint' => $basePath.'/Models/'.$modelName.'.php',
             ];
             $steps[] = [
                 'type' => 'generate',
-                'name' => 'patch_migration:' . $modelName,
-                'description' => "Patch migration from draft",
+                'name' => 'patch_migration:'.$modelName,
+                'description' => 'Patch migration from draft',
                 'generator' => 'migration',
-                'path_hint' => 'database/migrations/*_create_' . strtolower($modelName) . '_table.php',
+                'path_hint' => 'database/migrations/*_create_'.strtolower($modelName).'_table.php',
             ];
         }
 
@@ -63,21 +63,21 @@ final class BuildPlanner
             'name' => 'action',
             'description' => 'Generate actions',
             'generator' => 'action',
-            'path_hint' => $basePath . '/Actions/',
+            'path_hint' => $basePath.'/Actions/',
         ];
         $steps[] = [
             'type' => 'generate',
             'name' => 'controller',
             'description' => 'Generate controllers',
             'generator' => 'controller',
-            'path_hint' => $basePath . '/Http/Controllers/',
+            'path_hint' => $basePath.'/Http/Controllers/',
         ];
         $steps[] = [
             'type' => 'generate',
             'name' => 'request',
             'description' => 'Generate form requests',
             'generator' => 'request',
-            'path_hint' => $basePath . '/Http/Requests/',
+            'path_hint' => $basePath.'/Http/Requests/',
         ];
         $steps[] = [
             'type' => 'generate',
